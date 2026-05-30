@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Expand-Archive -Path \"Smart City Management Platform.zip\" -DestinationPath \".\\\\smart-city-extracted\" -Force)"
+    ]
+  }
+}
