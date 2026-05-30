@@ -2,19 +2,16 @@ import client from './client'
 
 // ─── Auth ──────────────────────────────────────────────
 export const authApi = {
-  loginCitizen: (provider: string, credential: string) =>
-    client.post('/auth/login/citizen', { provider, credential }),
+  login: (email: string, password: string) =>
+    client.post('/auth/login', { email, password }),
 
-  sendOtp: (phone: string) =>
-    client.post('/auth/otp/send', { phone }),
+  register: (name: string, email: string, password: string) =>
+    client.post('/auth/register', { name, email, password }),
 
-  verifyOtp: (phone: string, code: string) =>
-    client.post('/auth/otp/verify', { phone, code }),
+  me: () => client.get('/auth/me'),
 
   loginStaff: (email: string, password: string) =>
     client.post('/auth/login/staff', { email, password }),
-
-  me: () => client.get('/auth/me'),
 }
 
 // ─── Reports ───────────────────────────────────────────

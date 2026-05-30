@@ -4,7 +4,7 @@ import {
   TrendingUp, BarChart2, Archive, Bell,
   FileText, CheckCircle2, Clock, AlertTriangle,
   Search, Download, Plus, Trash2,
-  Info, AlertCircle, CheckCircle,
+  Info, AlertCircle, CheckCircle, Send,
 } from 'lucide-react'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -15,11 +15,11 @@ import { useApi } from '../../hooks/useApi'
 import { analyticsApi, reportsApi, alertsApi } from '../../api'
 import {
   KPISummary, NeighborhoodStat, CategoryStat, MonthlyTrend,
-  AgencyPerformance, SLABreach, Report, GovAlert, AlertType,
+  AgencyPerformance, SLABreach, Report, GovAlert, AlertType, AgencyRequest,
 } from '../../types'
 import {
   MOCK_KPI, MOCK_NEIGHBORHOOD, MOCK_CATEGORY, MOCK_TREND,
-  MOCK_AGENCY, MOCK_BREACHES, MOCK_REPORTS, MOCK_ALERTS,
+  MOCK_AGENCY, MOCK_BREACHES, MOCK_REPORTS, MOCK_ALERTS, MOCK_AGENCY_REQUESTS,
 } from '../../mocks'
 import PortalHeader from '../../components/PortalHeader'
 import Button from '../../components/ui/Button'
@@ -27,7 +27,7 @@ import Input from '../../components/ui/Input'
 import Modal from '../../components/ui/Modal'
 import Spinner from '../../components/ui/Spinner'
 
-type Tab = 'analytics' | 'archive' | 'alerts'
+type Tab = 'analytics' | 'archive' | 'oversight' | 'alerts'
 
 function toArr<T>(val: unknown): T[] {
   return Array.isArray(val) ? (val as T[]) : []
@@ -261,6 +261,146 @@ function ArchiveTab() {
   )
 }
 
+// ─── Oversight Tab ─────────────────────────────────
+function OversightTab() {
+  const [search, setSearch] = useState('')
+  const [status, setStatus] = useState<Report['status'] | ''>('')
+
+  const list: AgencyRequest[] = MOCK_AGENCY_REQUESTS
+  const filtered = list.filter(r =>
+    (!status || r.status === status) &&
+    (!search ||
+      r.title.toLowerCase().includes(search.toLowerCase()) ||
+      r.from_agency.toLowerCase().includes(search.toLowerCase()) ||
+      r.to_agency.toLowerCase().includes(search.toLowerCase()) ||
+      r.location.toLowerCase().includes(search.toLowerCase()))
+  )
+
+  const labels: Record<string, string> = { '': 'Hamısı', pending: 'Gözləyir', inprogress: 'İcrada', resolved: 'Tamamlandı', overdue: 'Gecikib' }
+  const statusColor: Record<string, string> = {
+    resolved: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    inprogress: 'bg-blue-50 text-blue-700 border-blue-200',
+    pending: 'bg-amber-50 text-amber-700 border-amber-200',
+    overdue: 'bg-red-50 text-red-700 border-red-200',
+  }
+
+  const total = list.length
+  const active = list.filter(r => r.status !== 'resolved').length
+  const overdue = list.filter(r => r.status === 'overdue').length
+  const avgSla = Math.round(list.reduce((s, r) => s + r.sla_days, 0) / Math.max(list.length, 1))
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="relative overflow-hidden rounded-3xl border border-purple-100 bg-gradient-to-br from-white via-purple-50 to-amber-50 p-6">
+        <div className="absolute -top-16 -right-10 h-40 w-40 rounded-full bg-purple-200/40 blur-3xl" />
+        <div className="absolute -bottom-16 -left-12 h-44 w-44 rounded-full bg-amber-200/40 blur-3xl" />
+
+        <div className="relative z-10 flex flex-col gap-4">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-purple-700 border border-purple-100">
+                Qurumlararası Nəzarət Mərkəzi
+              </div>
+              <h3 className="font-heading text-2xl font-bold text-gray-900 mt-2">Sorğular və SLA İzləmə</h3>
+              <p className="text-sm text-gray-600 mt-1 max-w-xl">
+                Qurumlar arasında göndərilən tapşırıqların vəziyyəti, son tarixlər və gecikmələr real vaxtda izlənir.
+              </p>
+            </div>
+            <div className="rounded-2xl bg-white/90 border border-gray-100 px-4 py-3 text-right shadow-sm">
+              <p className="text-xs text-gray-400">Aktiv sorğu</p>
+              <p className="text-xl font-bold text-purple-700">{active}</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="rounded-2xl bg-white/90 border border-gray-100 p-3">
+              <p className="text-xs text-gray-400">Ümumi sorğu</p>
+              <p className="text-lg font-bold text-gray-900">{total}</p>
+            </div>
+            <div className="rounded-2xl bg-white/90 border border-gray-100 p-3">
+              <p className="text-xs text-gray-400">Aktiv</p>
+              <p className="text-lg font-bold text-blue-600">{active}</p>
+            </div>
+            <div className="rounded-2xl bg-white/90 border border-gray-100 p-3">
+              <p className="text-xs text-gray-400">Gecikən</p>
+              <p className="text-lg font-bold text-red-600">{overdue}</p>
+            </div>
+            <div className="rounded-2xl bg-white/90 border border-gray-100 p-3">
+              <p className="text-xs text-gray-400">Orta SLA</p>
+              <p className="text-lg font-bold text-emerald-600">{avgSla} gün</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-5">
+        <div className="flex flex-wrap gap-3 items-center">
+          <div className="relative flex-1 min-w-56">
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Sorğu, qurum, ünvan..."
+              className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-gray-200 text-sm outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100" />
+          </div>
+          {(['', 'pending', 'inprogress', 'overdue', 'resolved'] as const).map(s => (
+            <button key={s} onClick={() => setStatus(s)}
+              className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors
+                ${status === s ? 'bg-purple-600 text-white' : 'bg-gray-50 border border-gray-200 text-gray-600 hover:border-purple-300'}`}>
+              {labels[s]}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {filtered.map(r => (
+          <div key={r.id} className="rounded-3xl bg-white border border-gray-100 shadow-sm p-5 hover:shadow-md transition-all">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="text-xs font-semibold text-purple-600">{r.id}</div>
+                <h4 className="font-semibold text-gray-900 mt-1">{r.title}</h4>
+                <p className="text-xs text-gray-500 mt-1">{r.location}</p>
+              </div>
+              <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium border ${statusColor[r.status] ?? ''}`}>
+                {labels[r.status] ?? r.status}
+              </span>
+            </div>
+
+            <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-gray-600">
+              <span className="rounded-full bg-gray-50 border border-gray-200 px-2.5 py-1">
+                Göndərən: {r.from_agency}
+              </span>
+              <span className="rounded-full bg-gray-50 border border-gray-200 px-2.5 py-1">
+                Qəbul edən: {r.to_agency}
+              </span>
+            </div>
+
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <div className="rounded-2xl bg-gray-50 border border-gray-100 p-3">
+                <p className="text-xs text-gray-400">Son tarix</p>
+                <p className="text-sm font-semibold text-gray-900">{r.deadline_date}</p>
+              </div>
+              <div className={`rounded-2xl border p-3 ${r.status === 'overdue' ? 'bg-red-50 border-red-200' : 'bg-emerald-50 border-emerald-200'}`}>
+                <p className="text-xs text-gray-400">SLA</p>
+                <p className={`text-sm font-semibold ${r.status === 'overdue' ? 'text-red-700' : 'text-emerald-700'}`}>
+                  {r.sla_days} gün
+                </p>
+              </div>
+            </div>
+
+            {r.note && (
+              <p className="mt-3 text-xs text-gray-500 leading-relaxed">{r.note}</p>
+            )}
+          </div>
+        ))}
+        {filtered.length === 0 && (
+          <div className="col-span-full bg-white rounded-3xl border border-gray-100 p-10 text-center text-gray-400">
+            Sorğu tapılmadı
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ─── Alerts Tab ────────────────────────────────────
 function AlertsTab() {
   const { data, refetch } = useApi<GovAlert[]>(() => alertsApi.list())
@@ -359,6 +499,7 @@ export default function ExecutivePage() {
   const tabs = [
     { key: 'analytics' as Tab, label: 'Analitik Panel', icon: BarChart2 },
     { key: 'archive' as Tab, label: 'Rəqəmsal Arxiv', icon: Archive },
+    { key: 'oversight' as Tab, label: 'Qurumlara Nəzarət', icon: Send },
     { key: 'alerts' as Tab, label: 'Xəbərdarlıqlar', icon: Bell, count: notifCount },
   ]
 
@@ -416,6 +557,7 @@ export default function ExecutivePage() {
         {/* Tab content */}
         {tab === 'analytics' && <AnalyticsTab />}
         {tab === 'archive' && <ArchiveTab />}
+        {tab === 'oversight' && <OversightTab />}
         {tab === 'alerts' && <AlertsTab />}
       </div>
     </div>

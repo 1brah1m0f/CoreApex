@@ -9,9 +9,11 @@ interface Pos { lat: number; lng: number }
 interface Props {
   value: Pos | null
   onChange: (pos: Pos) => void
+  showLabel?: boolean
+  height?: number
 }
 
-export default function LocationPickerMap({ value, onChange }: Props) {
+export default function LocationPickerMap({ value, onChange, showLabel = true, height = 200 }: Props) {
   function handleClick(e: MapMouseEvent) {
     const ll = e.detail.latLng
     if (ll) onChange({ lat: ll.lat, lng: ll.lng })
@@ -19,12 +21,14 @@ export default function LocationPickerMap({ value, onChange }: Props) {
 
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-sm font-medium text-gray-700 flex items-center gap-1.5">
-        <MapPin size={14} className="text-blue-500" />
-        Xəritədən yer seçin
-        <span className="text-xs text-gray-400 font-normal">(istəyə bağlı — klik ilə pin qoy)</span>
-      </label>
-      <div className="rounded-xl overflow-hidden border border-gray-200" style={{ height: 200 }}>
+      {showLabel && (
+        <label className="text-sm font-medium text-gray-700 flex items-center gap-1.5">
+          <MapPin size={14} className="text-blue-500" />
+          Xəritədən yer seçin
+          <span className="text-xs text-gray-400 font-normal">(istəyə bağlı — klik ilə pin qoy)</span>
+        </label>
+      )}
+      <div className="rounded-xl overflow-hidden border border-gray-200" style={{ height }}>
         <Map
           mapId={MAP_ID}
           defaultCenter={BAKU}

@@ -1,13 +1,11 @@
-import { ThumbsUp, User, Calendar } from 'lucide-react'
+import { User, Calendar } from 'lucide-react'
 import { Proposal } from '../types'
 
 interface ProposalCardProps {
   proposal: Proposal
-  onVote?: (id: string) => void
-  voting?: boolean
 }
 
-export default function ProposalCard({ proposal, onVote, voting }: ProposalCardProps) {
+export default function ProposalCard({ proposal }: ProposalCardProps) {
   return (
     <div className="rounded-xl bg-white p-4 shadow-card border border-border">
       <div className="flex items-start justify-between gap-3 mb-2">
@@ -24,25 +22,6 @@ export default function ProposalCard({ proposal, onVote, voting }: ProposalCardP
           <span className="flex items-center gap-1"><User size={12} /> {proposal.author}</span>
           <span className="flex items-center gap-1"><Calendar size={12} /> {proposal.date}</span>
         </div>
-        {onVote && (
-          <button
-            onClick={() => onVote(proposal.id)}
-            disabled={proposal.voted_by_me || voting}
-            className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors
-              ${proposal.voted_by_me
-                ? 'bg-primary text-white cursor-default'
-                : 'bg-blue-50 text-primary hover:bg-primary hover:text-white'
-              } disabled:opacity-50`}
-          >
-            <ThumbsUp size={12} />
-            {proposal.votes}
-          </button>
-        )}
-        {!onVote && (
-          <span className="flex items-center gap-1 text-sm font-medium text-primary">
-            <ThumbsUp size={14} /> {proposal.votes}
-          </span>
-        )}
       </div>
     </div>
   )

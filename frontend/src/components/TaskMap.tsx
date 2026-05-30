@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { Map, AdvancedMarker, InfoWindow, useMap, useMapsLibrary } from '@vis.gl/react-google-maps'
+import { useState } from 'react'
+import { Map, AdvancedMarker, InfoWindow } from '@vis.gl/react-google-maps'
 import { Zap, Droplets, Trash2, Construction, Leaf, MapPin } from 'lucide-react'
 import { Task } from '../types'
 
@@ -10,32 +10,6 @@ const priorityStyle: Record<string, { bg: string; ring: string; label: string }>
   high:   { bg: '#EF4444', ring: '#FCA5A5', label: 'Yüksək' },
   medium: { bg: '#F59E0B', ring: '#FCD34D', label: 'Orta' },
   low:    { bg: '#3B82F6', ring: '#93C5FD', label: 'Aşağı' },
-}
-
-// ─── Route polyline using Maps JS API ─────────────
-function RoutePolyline({ coords }: { coords: google.maps.LatLngLiteral[] }) {
-  const map = useMap()
-  const mapsLib = useMapsLibrary('maps')
-
-  useEffect(() => {
-    if (!map || !mapsLib || coords.length < 2) return
-    const polyline = new mapsLib.Polyline({
-      path: coords,
-      geodesic: true,
-      strokeColor: '#2563EB',
-      strokeOpacity: 0.8,
-      strokeWeight: 3,
-      icons: [{
-        icon: { path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW, scale: 3, fillColor: '#2563EB', fillOpacity: 1 },
-        offset: '100%',
-        repeat: '80px',
-      }],
-    })
-    polyline.setMap(map)
-    return () => polyline.setMap(null)
-  }, [map, mapsLib, coords])
-
-  return null
 }
 
 function categoryIcon(cat?: string) {
@@ -61,11 +35,6 @@ export default function TaskMap({ tasks, onNavigateToTasks }: TaskMapProps) {
     t => t.status !== 'resolved' && t.map_x != null && t.map_y != null
   )
 
-  const routeCoords: google.maps.LatLngLiteral[] = activeTasks.map(t => ({
-    lat: t.map_x!,
-    lng: t.map_y!,
-  }))
-
   return (
     <div className="rounded-2xl overflow-hidden border border-gray-200 shadow-sm relative" style={{ height: 400 }}>
       <Map
@@ -77,8 +46,6 @@ export default function TaskMap({ tasks, onNavigateToTasks }: TaskMapProps) {
         streetViewControl={false}
         fullscreenControl={false}
       >
-        <RoutePolyline coords={routeCoords} />
-
         {activeTasks.map((task, i) => {
           const style = priorityStyle[task.priority] ?? priorityStyle.medium
           const isSelected = selected?.id === task.id

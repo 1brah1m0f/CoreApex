@@ -2,6 +2,7 @@ import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import { APIProvider } from '@vis.gl/react-google-maps'
 import Landing from './pages/Landing'
+import AuthPage from './pages/AuthPage'
 import CitizenPage from './pages/CitizenPage'
 import InspectorPage from './pages/inspector/InspectorPage'
 import ExecutivePage from './pages/executive/ExecutivePage'
@@ -10,6 +11,7 @@ const MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
 
 const router = createBrowserRouter([
   { path: '/', element: <Landing /> },
+  { path: '/auth', element: <AuthPage /> },
   { path: '/citizen', element: <CitizenPage /> },
   { path: '/inspector', element: <InspectorPage /> },
   { path: '/executive', element: <ExecutivePage /> },

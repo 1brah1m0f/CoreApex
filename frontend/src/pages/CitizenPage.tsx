@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
-  FileText, ThumbsUp, Bell, MapPin, Settings2,
-  CheckCircle, Clock, Plus, ThumbsUp as ThumbsUpSolid,
-  Info, AlertTriangle, CheckCircle2, ArrowUpDown,
+  FileText, Bell, MapPin, Settings2,
+  CheckCircle, Clock, Plus,
+  Info, AlertTriangle, CheckCircle2, Lightbulb,
+  ImageIcon, Upload, X,
 } from 'lucide-react'
 import { useApi } from '../hooks/useApi'
 import { reportsApi, proposalsApi, alertsApi } from '../api'
@@ -79,63 +79,6 @@ function ReportCard({ report }: { report: Report }) {
   )
 }
 
-// ─── Proposal Card ─────────────────────────────────
-const rankColors = [
-  'bg-amber-400 text-white',
-  'bg-blue-500 text-white',
-  'bg-orange-400 text-white',
-]
-
-function ProposalCard({
-  proposal, rank, onVote, voting,
-}: { proposal: Proposal; rank: number; onVote: (id: string) => void; voting: boolean }) {
-  const rankClass = rankColors[rank - 1] ?? 'bg-gray-200 text-gray-600'
-
-  return (
-    <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
-      <div className="flex items-start gap-3">
-        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5 ${rankClass}`}>
-          {rank}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-2 mb-1.5">
-            <h3 className="font-semibold text-gray-900 text-[15px] leading-snug">{proposal.title}</h3>
-            <span className="text-xs px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 whitespace-nowrap flex-shrink-0">
-              {proposal.tag}
-            </span>
-          </div>
-          <p className="text-sm text-gray-500 leading-relaxed mb-3">{proposal.description}</p>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs text-gray-400">
-              <span>{proposal.author}</span>
-              <span>·</span>
-              <span>{proposal.date}</span>
-              {proposal.voted_by_me && (
-                <>
-                  <span>·</span>
-                  <span className="text-blue-600 font-medium">Dəstəklədiniz ✓</span>
-                </>
-              )}
-            </div>
-            <button
-              onClick={() => onVote(proposal.id)}
-              disabled={proposal.voted_by_me || voting}
-              className={`flex items-center gap-1.5 rounded-2xl px-3 py-1.5 text-sm font-semibold transition-all
-                ${proposal.voted_by_me
-                  ? 'bg-blue-600 text-white shadow-md shadow-blue-200'
-                  : 'bg-gray-100 text-gray-600 hover:bg-blue-50 hover:text-blue-600'
-                } disabled:opacity-70`}
-            >
-              <ThumbsUp size={14} />
-              {proposal.votes}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 // ─── Alert Card ────────────────────────────────────
 const alertConfig = {
   warning: { icon: AlertTriangle, bg: 'bg-amber-50 border-amber-200', icon_color: 'text-amber-500', label_color: 'text-amber-700' },
@@ -163,15 +106,16 @@ function AlertCard({ alert }: { alert: GovAlert }) {
 
 // ─── New Report Modal ──────────────────────────────
 function NewReportModal({ open, onClose, onSuccess }: { open: boolean; onClose: () => void; onSuccess: () => void }) {
-  const [form, setForm] = useState({ title: '', description: '', address: '', neighborhood: '', category: '' })
+  const [form, setForm] = useState({ title: '', description: '', category: '' })
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null)
+  const [images, setImages] = useState<{ file: File; url: string }[]>([])
   const [submitting, setSubmitting] = useState(false)
   const categories = ['Yollar', 'Su kəməri', 'Elektrik', 'Abadlıq', 'Zibil', 'Digər']
 
   function setF(k: string, v: string) { setForm(f => ({ ...f, [k]: v })) }
 
   async function submit() {
-    if (!form.title || !form.description || !form.address || !form.category) {
+    if (!form.title || !form.description || !form.category) {
       toast.error('Bütün sahələri doldurun')
       return
     }
@@ -190,6 +134,33 @@ function NewReportModal({ open, onClose, onSuccess }: { open: boolean; onClose: 
     }
   }
 
+  function addImages(files: FileList | null) {
+    if (!files) return
+    const allowed = Array.from(files).filter(f => f.type.startsWith('image/'))
+    if (allowed.length !== files.length) toast.error('Yalnız şəkil faylları qəbul edilir')
+    const next = allowed.map(f => ({ file: f, url: URL.createObjectURL(f) }))
+    setImages(prev => [...prev, ...next])
+  }
+
+  function removeImage(url: string) {
+    setImages(prev => {
+      const img = prev.find(i => i.url === url)
+      if (img) URL.revokeObjectURL(img.url)
+      return prev.filter(i => i.url !== url)
+    })
+  }
+
+  function useGps() {
+    if (!navigator.geolocation) {
+      toast.error('GPS dəstəklənmir')
+      return
+    }
+    navigator.geolocation.getCurrentPosition(
+      pos => setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => toast.error('GPS icazəsi verilmədi')
+    )
+  }
+
   return (
     <Modal open={open} onClose={onClose} title="Yeni Müraciət"
       footer={
@@ -200,26 +171,74 @@ function NewReportModal({ open, onClose, onSuccess }: { open: boolean; onClose: 
       }
     >
       <div className="flex flex-col gap-4">
-        <Input label="Başlıq" value={form.title} onChange={e => setF('title', e.target.value)} placeholder="Problemin qısa təsviri" />
-        <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700">Ətraflı təsvir</label>
-          <textarea value={form.description} onChange={e => setF('description', e.target.value)} rows={3}
-            className="rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 resize-none"
-            placeholder="Problemi ətraflı izah edin..." />
+        <div className="rounded-2xl border border-gray-100 bg-white p-4">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Müraciət məlumatı</p>
+          <div className="mt-3 flex flex-col gap-3">
+            <Input label="Başlıq" value={form.title} onChange={e => setF('title', e.target.value)} placeholder="Problemin qısa təsviri" />
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium text-gray-700">Ətraflı təsvir</label>
+              <textarea value={form.description} onChange={e => setF('description', e.target.value)} rows={3}
+                className="rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 resize-none"
+                placeholder="Problemi ətraflı izah edin..." />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium text-gray-700">Kateqoriya</label>
+              <select value={form.category} onChange={e => setF('category', e.target.value)}
+                className="rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100">
+                <option value="">Seçin...</option>
+                {categories.map(c => <option key={c}>{c}</option>)}
+              </select>
+            </div>
+          </div>
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          <Input label="Ünvan" value={form.address} onChange={e => setF('address', e.target.value)} placeholder="Küçə, bina №" />
-          <Input label="Rayon" value={form.neighborhood} onChange={e => setF('neighborhood', e.target.value)} placeholder="Məs. Nərimanov" />
+
+        <div className="rounded-2xl border border-gray-100 bg-white p-4">
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-medium text-gray-700 flex items-center gap-1.5">
+              <MapPin size={14} className="text-blue-500" /> GPS / Xəritə
+            </label>
+            <button onClick={useGps} type="button" className="text-xs font-semibold text-blue-600 hover:text-blue-700">
+              GPS-dən götür
+            </button>
+          </div>
+          <p className="text-xs text-gray-400 mt-1">Xəritədən yer seçin və ya GPS icazəsi verin</p>
+          <div className="mt-2">
+            <LocationPickerMap value={location} onChange={setLocation} showLabel={false} height={180} />
+          </div>
         </div>
-        <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700">Kateqoriya</label>
-          <select value={form.category} onChange={e => setF('category', e.target.value)}
-            className="rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100">
-            <option value="">Seçin...</option>
-            {categories.map(c => <option key={c}>{c}</option>)}
-          </select>
+
+        <div className="rounded-2xl border border-gray-100 bg-white p-4">
+          <label className="text-sm font-medium text-gray-700 flex items-center gap-1.5">
+            <ImageIcon size={14} className="text-blue-500" /> Şəkillər (istəyə bağlı)
+          </label>
+          <p className="text-xs text-gray-400 mt-1">Hadisəni daha aydın təsvir etmək üçün şəkil əlavə edin</p>
+          <label className="mt-3 rounded-2xl border-2 border-dashed border-gray-200 hover:border-blue-300 hover:bg-gray-50 transition-all p-4 cursor-pointer flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center">
+              <Upload size={16} className="text-blue-500" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-gray-700">Şəkil əlavə et</p>
+              <p className="text-xs text-gray-400">JPG, PNG, WEBP · bir neçə seçilə bilər</p>
+            </div>
+            <input type="file" accept="image/*" multiple className="hidden" onChange={e => addImages(e.target.files)} />
+          </label>
+          {images.length > 0 && (
+            <div className="grid grid-cols-3 gap-2 mt-3">
+              {images.map(img => (
+                <div key={img.url} className="relative rounded-xl overflow-hidden bg-gray-100 aspect-square">
+                  <img src={img.url} alt={img.file.name} className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => removeImage(img.url)}
+                    className="absolute top-1 right-1 w-6 h-6 rounded-full bg-white/90 flex items-center justify-center"
+                  >
+                    <X size={12} className="text-red-500" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-        <LocationPickerMap value={location} onChange={setLocation} />
       </div>
     </Modal>
   )
@@ -281,7 +300,6 @@ export default function CitizenPage() {
   const [tab, setTab] = useState<Tab>('reports')
   const [newReportOpen, setNewReportOpen] = useState(false)
   const [newProposalOpen, setNewProposalOpen] = useState(false)
-  const [votingId, setVotingId] = useState<string | null>(null)
 
   const reportsFetch = useApi<Report[]>(() => reportsApi.mine())
   const proposalsFetch = useApi<Proposal[]>(() => proposalsApi.list())
@@ -297,22 +315,11 @@ export default function CitizenPage() {
     resolved: reports.filter(r => r.status === 'resolved').length,
   }
 
-  async function handleVote(id: string) {
-    setVotingId(id)
-    try {
-      await proposalsApi.vote(id)
-      proposalsFetch.refetch()
-    } catch {
-      toast.success('Səsiniz qeydə alındı')
-    } finally {
-      setVotingId(null)
-    }
-  }
 
   const tabs = [
     { key: 'reports' as Tab, label: 'Müraciətlərim', icon: FileText, count: reports.length },
-    { key: 'proposals' as Tab, label: 'Təkliflər', icon: ThumbsUp, count: proposals.length },
-    { key: 'alerts' as Tab, label: 'Xəbərdarlıqlar', icon: Bell, count: alerts.length },
+    { key: 'proposals' as Tab, label: 'Təkliflərim', icon: Lightbulb, count: proposals.length },
+    { key: 'alerts' as Tab, label: 'Bildirişlər', icon: Bell, count: alerts.length },
   ]
 
   return (
@@ -331,10 +338,12 @@ export default function CitizenPage() {
                   ${active ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
                 <Icon size={16} />
                 {t.label}
-                <span className={`rounded-full text-xs px-1.5 py-0.5 font-bold
-                  ${active ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500'}`}>
-                  {t.count}
-                </span>
+                {t.count !== null && (
+                  <span className={`rounded-full text-xs px-1.5 py-0.5 font-bold
+                    ${active ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500'}`}>
+                    {t.count}
+                  </span>
+                )}
               </button>
             )
           })}
@@ -349,7 +358,7 @@ export default function CitizenPage() {
           <div className="flex flex-col gap-4">
             <button onClick={() => setNewReportOpen(true)}
               className="w-full bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white rounded-2xl py-4 font-semibold text-base transition-all shadow-lg shadow-blue-200 flex items-center justify-center gap-2">
-              <Plus size={20} /> + Yeni müraciət
+              Yeni müraciət
             </button>
 
             {/* KPI boxes */}
@@ -380,21 +389,35 @@ export default function CitizenPage() {
           <div className="flex flex-col gap-4">
             <button onClick={() => setNewProposalOpen(true)}
               className="w-full border-2 border-dashed border-blue-300 hover:border-blue-400 text-blue-600 rounded-2xl py-4 font-semibold text-base transition-all flex items-center justify-center gap-2 hover:bg-blue-50">
-              <Plus size={20} /> Yeni təklif göndər
+              <Plus size={20} /> Yeni təklif yaz
             </button>
 
             <div className="flex items-center justify-between">
-              <h2 className="font-bold text-gray-900">Cəmiyyət Təklifləri</h2>
-              <button className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700">
-                <ArrowUpDown size={13} /> Seçimlərə görə
-              </button>
+              <h2 className="font-bold text-gray-900">Mənim təkliflərim</h2>
+              <span className="text-xs text-gray-500">Səsvermə yoxdur</span>
             </div>
 
             {proposalsFetch.loading && <div className="flex justify-center py-8"><Spinner /></div>}
             <div className="flex flex-col gap-3">
-              {proposals.map((p, i) => (
-                <ProposalCard key={p.id} proposal={p} rank={i + 1} onVote={handleVote} voting={votingId === p.id} />
+              {proposals.map(p => (
+                <div key={p.id} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="font-semibold text-gray-900 text-[15px] leading-snug">{p.title}</h3>
+                    <span className="text-xs px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 whitespace-nowrap flex-shrink-0">
+                      {p.tag}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-500 leading-relaxed mt-2">{p.description}</p>
+                  <div className="flex items-center gap-2 text-xs text-gray-400 mt-2">
+                    <span>{p.date}</span>
+                    <span>·</span>
+                    <span>Yazar: {p.author}</span>
+                  </div>
+                </div>
               ))}
+              {proposals.length === 0 && (
+                <p className="text-center text-gray-400 py-16">Hələ təklif yoxdur</p>
+              )}
             </div>
           </div>
         )}
@@ -410,6 +433,7 @@ export default function CitizenPage() {
             )}
           </div>
         )}
+
       </div>
 
       <NewReportModal open={newReportOpen} onClose={() => setNewReportOpen(false)} onSuccess={reportsFetch.refetch} />

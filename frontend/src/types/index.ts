@@ -100,6 +100,19 @@ export interface SLABreach {
   severity: 'critical' | 'high'
 }
 
+export interface AgencyRequest {
+  id: string
+  title: string
+  from_agency: string
+  to_agency: string
+  location: string
+  status: ReportStatus
+  sent_date: string
+  deadline_date: string
+  sla_days: number
+  note?: string
+}
+
 export interface SimLayer {
   key: string
   label: string

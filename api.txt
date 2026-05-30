@@ -1,542 +1,359 @@
-{
-  "api_version": "v1",
-  "base_url": "/api/v1",
-  "extracted_from": "CitizenDashboard.tsx, InspectorDashboard.tsx, ExecutiveDashboard.tsx, LandingPage.tsx",
+CoreApex — FastAPI Endpoint Specification
+==========================================
+Extracted from: frontend/src/api/index.ts, types/index.ts, mocks/index.ts,
+                pages/CitizenPage.tsx, pages/inspector/Simulation.tsx,
+                pages/executive/Analytics.tsx, pages/citizen/NewReport.tsx
 
-  "endpoints": [
+Base URL  : /api/v1
+Auth      : Authorization: Bearer <token>
+Token src : localStorage["apexcore_token"]
+On 401    : client clears token + redirects to /
+Errors    : { "detail": "string" }  OR  { "message": "string" }
+Note      : All list endpoints must return [] on empty, never null.
 
-    // ─────────────────────────────────────────────
-    // AUTH
-    // ─────────────────────────────────────────────
-    {
-      "group": "Auth",
-      "method": "POST",
-      "path": "/auth/login/citizen",
-      "description": "Citizen login via SİMA, Asan İmza, ID card, myGov, or phone+OTP",
-      "roles": ["citizen"],
-      "request_body": {
-        "provider": "sima | asan | id_card | mygov | phone",
-        "credential": "string (token, id_number, or phone depending on provider)"
-      },
-      "response": {
-        "access_token": "string",
-        "role": "citizen",
-        "user": { "id": "uuid", "full_name": "string", "phone": "string" }
-      }
-    },
-    {
-      "group": "Auth",
-      "method": "POST",
-      "path": "/auth/otp/send",
-      "description": "Send SMS OTP to phone number (used in phone login flow)",
-      "roles": ["public"],
-      "request_body": { "phone": "+994XXXXXXXXX" },
-      "response": { "otp_sent": true, "expires_in_seconds": 120 }
-    },
-    {
-      "group": "Auth",
-      "method": "POST",
-      "path": "/auth/otp/verify",
-      "description": "Verify OTP code — returns access token on success",
-      "roles": ["public"],
-      "request_body": { "phone": "+994XXXXXXXXX", "code": "6-digit string" },
-      "response": {
-        "access_token": "string",
-        "role": "citizen",
-        "user": { "id": "uuid", "full_name": "string" }
-      }
-    },
-    {
-      "group": "Auth",
-      "method": "POST",
-      "path": "/auth/login/staff",
-      "description": "Login for Inspector and Executive (email + password)",
-      "roles": ["inspector", "executive"],
-      "request_body": { "email": "string", "password": "string" },
-      "response": {
-        "access_token": "string",
-        "role": "inspector | executive",
-        "user": { "id": "uuid", "full_name": "string", "email": "string" }
-      }
-    },
-    {
-      "group": "Auth",
-      "method": "GET",
-      "path": "/auth/me",
-      "description": "Return current authenticated user",
-      "roles": ["citizen", "inspector", "executive"],
-      "response": { "id": "uuid", "full_name": "string", "role": "string", "email": "string" }
-    },
 
-    // ─────────────────────────────────────────────
-    // REPORTS (Müraciətlər)
-    // ─────────────────────────────────────────────
-    {
-      "group": "Reports",
-      "method": "POST",
-      "path": "/reports",
-      "description": "Citizen submits a new report",
-      "roles": ["citizen"],
-      "request_body": {
-        "category": "electric | water | waste | road | other",
-        "description": "string (min 5 chars)",
-        "address": "string",
-        "lat": "float",
-        "lng": "float",
-        "photo_url": "string | null",
-        "ai_routed": "boolean"
-      },
-      "response": {
-        "id": "string (MR-XXXX)",
-        "status": "pending",
-        "assigned_agency": "string",
-        "ai_confidence": "float | null",
-        "created_at": "ISO8601"
-      }
-    },
-    {
-      "group": "Reports",
-      "method": "POST",
-      "path": "/reports/ai-classify",
-      "description": "AI classifies report category from uploaded photo",
-      "roles": ["citizen"],
-      "request_body": { "photo_url": "string" },
-      "response": {
-        "category": "electric | water | waste | road | other",
-        "assigned_agency": "string",
-        "confidence": "float (0–1)"
-      }
-    },
-    {
-      "group": "Reports",
-      "method": "GET",
-      "path": "/reports/mine",
-      "description": "Return all reports submitted by the authenticated citizen",
-      "roles": ["citizen"],
-      "query_params": { "status": "pending | inprogress | resolved (optional)" },
-      "response": [
-        {
-          "id": "string",
-          "title": "string",
-          "status": "pending | inprogress | resolved",
-          "address": "string",
-          "date": "string",
-          "ai_routed": "string"
-        }
-      ]
-    },
-    {
-      "group": "Reports",
-      "method": "GET",
-      "path": "/reports",
-      "description": "All reports — filterable; for Inspector and Executive",
-      "roles": ["inspector", "executive"],
-      "query_params": {
-        "status": "pending | inprogress | resolved | overdue (optional)",
-        "category": "string (optional)",
-        "neighborhood": "string (optional)",
-        "search": "string (optional — searches id, title, neighborhood)",
-        "page": "int",
-        "limit": "int"
-      },
-      "response": {
-        "total": "int",
-        "results": [
-          {
-            "id": "string",
-            "title": "string",
-            "category": "string",
-            "neighborhood": "string",
-            "status": "string",
-            "citizen": "string",
-            "assigned_to": "string",
-            "submitted_date": "string",
-            "resolved_date": "string | null",
-            "deadline_date": "string",
-            "deadline_passed": "boolean"
-          }
-        ]
-      }
-    },
-    {
-      "group": "Reports",
-      "method": "GET",
-      "path": "/reports/{id}",
-      "description": "Get single report detail",
-      "roles": ["citizen", "inspector", "executive"],
-      "response": {
-        "id": "string",
-        "title": "string",
-        "description": "string",
-        "category": "string",
-        "address": "string",
-        "lat": "float",
-        "lng": "float",
-        "photo_url": "string | null",
-        "status": "string",
-        "assigned_agency": "string",
-        "citizen": { "id": "uuid", "name": "string", "phone": "string" },
-        "created_at": "ISO8601",
-        "deadline_date": "string"
-      }
-    },
-    {
-      "group": "Reports",
-      "method": "PATCH",
-      "path": "/reports/{id}/status",
-      "description": "Inspector updates report status",
-      "roles": ["inspector"],
-      "request_body": { "status": "inprogress | resolved" },
-      "response": { "id": "string", "status": "string", "updated_at": "ISO8601" }
-    },
-    {
-      "group": "Reports",
-      "method": "GET",
-      "path": "/reports/export",
-      "description": "Export archive as CSV — triggered from Executive archive 'İxrac et' button",
-      "roles": ["executive"],
-      "query_params": {
-        "status": "string (optional)",
-        "from_date": "YYYY-MM-DD (optional)",
-        "to_date": "YYYY-MM-DD (optional)",
-        "format": "csv | xlsx (default: csv)"
-      },
-      "response": "File download (Content-Disposition: attachment)"
-    },
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SHARED TYPES (from frontend/src/types/index.ts)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-    // ─────────────────────────────────────────────
-    // PROPOSALS (Təkliflər)
-    // ─────────────────────────────────────────────
-    {
-      "group": "Proposals",
-      "method": "GET",
-      "path": "/proposals",
-      "description": "List all proposals sorted by vote count descending",
-      "roles": ["citizen", "inspector", "executive"],
-      "query_params": { "tag": "string (optional)" },
-      "response": [
-        {
-          "id": "string",
-          "title": "string",
-          "description": "string",
-          "author": "string",
-          "date": "string",
-          "votes": "int",
-          "voted_by_me": "boolean",
-          "tag": "string"
-        }
-      ]
-    },
-    {
-      "group": "Proposals",
-      "method": "POST",
-      "path": "/proposals",
-      "description": "Citizen submits a new community proposal",
-      "roles": ["citizen"],
-      "request_body": {
-        "title": "string",
-        "description": "string (min 10 chars)",
-        "tag": "Nəqliyyat | Təhlükəsizlik | Texnologiya | Sosial | Ailə | Ümumi"
-      },
-      "response": {
-        "id": "string",
-        "title": "string",
-        "votes": 0,
-        "created_at": "ISO8601"
-      }
-    },
-    {
-      "group": "Proposals",
-      "method": "POST",
-      "path": "/proposals/{id}/vote",
-      "description": "Toggle vote on a proposal (vote if not voted, unvote if already voted)",
-      "roles": ["citizen"],
-      "request_body": {},
-      "response": { "id": "string", "votes": "int", "voted_by_me": "boolean" }
-    },
+ReportStatus : "pending" | "inprogress" | "resolved" | "overdue"
+AlertType    : "info" | "warning" | "success"
+Priority     : "high" | "medium" | "low"
+Role         : "citizen" | "inspector" | "executive"
 
-    // ─────────────────────────────────────────────
-    // ALERTS / GOV ANNOUNCEMENTS (Elanlar)
-    // ─────────────────────────────────────────────
-    {
-      "group": "Alerts",
-      "method": "GET",
-      "path": "/alerts",
-      "description": "List active government alerts/announcements",
-      "roles": ["citizen", "inspector", "executive"],
-      "query_params": { "type": "info | warning | success (optional)" },
-      "response": [
-        {
-          "id": "string",
-          "title": "string",
-          "body": "string",
-          "type": "info | warning | success",
-          "district": "string",
-          "date": "string",
-          "time": "string"
-        }
-      ]
-    },
-    {
-      "group": "Alerts",
-      "method": "POST",
-      "path": "/alerts",
-      "description": "Executive publishes a new government announcement",
-      "roles": ["executive"],
-      "request_body": {
-        "title": "string",
-        "body": "string",
-        "type": "info | warning | success",
-        "district": "string"
-      },
-      "response": { "id": "string", "created_at": "ISO8601" }
-    },
-    {
-      "group": "Alerts",
-      "method": "DELETE",
-      "path": "/alerts/{id}",
-      "description": "Executive removes an alert",
-      "roles": ["executive"],
-      "response": { "deleted": true }
-    },
-
-    // ─────────────────────────────────────────────
-    // TASKS (Inspector work orders — Tapşırıqlar)
-    // ─────────────────────────────────────────────
-    {
-      "group": "Tasks",
-      "method": "GET",
-      "path": "/tasks/mine",
-      "description": "Return tasks assigned to the authenticated inspector — shown in route map and task panel",
-      "roles": ["inspector"],
-      "response": [
-        {
-          "id": "string",
-          "title": "string",
-          "address": "string",
-          "category": "string",
-          "priority": "high | medium | low",
-          "status": "pending | inprogress | resolved",
-          "citizen": { "name": "string", "phone": "string" },
-          "date": "string",
-          "description": "string",
-          "agency_requirements": ["string"],
-          "map_x": "float",
-          "map_y": "float"
-        }
-      ]
-    },
-    {
-      "group": "Tasks",
-      "method": "GET",
-      "path": "/tasks/{id}",
-      "description": "Get single task detail for split-view in Inspector panel",
-      "roles": ["inspector"],
-      "response": {
-        "id": "string",
-        "title": "string",
-        "address": "string",
-        "category": "string",
-        "priority": "string",
-        "status": "string",
-        "citizen": { "name": "string", "phone": "string" },
-        "description": "string",
-        "agency_body": "string",
-        "agency_requirements": ["string"],
-        "proof_photo_url": "string | null",
-        "deadline": "string",
-        "map_x": "float",
-        "map_y": "float"
-      }
-    },
-    {
-      "group": "Tasks",
-      "method": "PATCH",
-      "path": "/tasks/{id}/status",
-      "description": "Inspector updates task status — 'Həll Olundu' button",
-      "roles": ["inspector"],
-      "request_body": { "status": "inprogress | resolved" },
-      "response": { "id": "string", "status": "string", "resolved_at": "ISO8601 | null" }
-    },
-    {
-      "group": "Tasks",
-      "method": "POST",
-      "path": "/tasks/{id}/proof",
-      "description": "Inspector uploads proof photo after completing a task",
-      "roles": ["inspector"],
-      "request_body": {
-        "content_type": "multipart/form-data",
-        "file": "binary (image)"
-      },
-      "response": { "proof_photo_url": "string", "uploaded_at": "ISO8601" }
-    },
-    {
-      "group": "Tasks",
-      "method": "POST",
-      "path": "/tasks",
-      "description": "Executive or system creates a task from a report",
-      "roles": ["executive"],
-      "request_body": {
-        "report_id": "string",
-        "inspector_id": "uuid",
-        "deadline": "ISO8601 date"
-      },
-      "response": { "id": "string", "created_at": "ISO8601" }
-    },
-
-    // ─────────────────────────────────────────────
-    // SLA REPORTS (Executive — Hesabat Göndər modal)
-    // ─────────────────────────────────────────────
-    {
-      "group": "SLA",
-      "method": "POST",
-      "path": "/reports/{id}/sla-report",
-      "description": "Executive submits official SLA breach report — 'Hesabatı Göndər' modal",
-      "roles": ["executive"],
-      "request_body": {
-        "report_text": "string",
-        "recommended_action": "string",
-        "severity": "critical | high"
-      },
-      "response": { "sent": true, "sent_at": "ISO8601" }
-    },
-
-    // ─────────────────────────────────────────────
-    // ANALYTICS (Executive only)
-    // ─────────────────────────────────────────────
-    {
-      "group": "Analytics",
-      "method": "GET",
-      "path": "/analytics/summary",
-      "description": "KPI summary — total, resolved, open, SLA breach count (top 4 cards in Executive dashboard)",
-      "roles": ["executive"],
-      "response": {
-        "total": "int",
-        "resolved": "int",
-        "open": "int",
-        "sla_breaches": "int"
-      }
-    },
-    {
-      "group": "Analytics",
-      "method": "GET",
-      "path": "/analytics/by-neighborhood",
-      "description": "Per-neighborhood resolved/open/overdue counts for bar chart",
-      "roles": ["executive"],
-      "response": [
-        { "name": "string", "resolved": "int", "open": "int", "overdue": "int" }
-      ]
-    },
-    {
-      "group": "Analytics",
-      "method": "GET",
-      "path": "/analytics/by-category",
-      "description": "Category distribution percentages for pie chart",
-      "roles": ["executive"],
-      "response": [
-        { "name": "string", "value": "int (percent)", "color": "hex string" }
-      ]
-    },
-    {
-      "group": "Analytics",
-      "method": "GET",
-      "path": "/analytics/monthly-trend",
-      "description": "Monthly submitted vs resolved counts for trend bar chart",
-      "roles": ["executive"],
-      "query_params": { "year": "int (default: current year)" },
-      "response": [
-        { "month": "string", "submitted": "int", "resolved": "int" }
-      ]
-    },
-    {
-      "group": "Analytics",
-      "method": "GET",
-      "path": "/analytics/agency-performance",
-      "description": "Per-agency SLA compliance % and avg resolution time",
-      "roles": ["executive"],
-      "response": [
-        { "agency": "string", "compliance_pct": "int", "avg_resolution_hours": "int" }
-      ]
-    },
-    {
-      "group": "Analytics",
-      "method": "GET",
-      "path": "/analytics/sla-breaches",
-      "description": "List of reports that exceeded SLA deadline — shown in SLA alert cards",
-      "roles": ["executive"],
-      "response": [
-        {
-          "report_id": "string",
-          "title": "string",
-          "neighborhood": "string",
-          "assigned_to": "string",
-          "overdue_days": "int",
-          "severity": "critical | high"
-        }
-      ]
-    },
-
-    // ─────────────────────────────────────────────
-    // SIMULATION (Inspector — Simulyasiya Paneli)
-    // ─────────────────────────────────────────────
-    {
-      "group": "Simulation",
-      "method": "GET",
-      "path": "/simulation/layers",
-      "description": "Return geo-layer data for a location (water pipes, traffic, wind, noise, soil)",
-      "roles": ["inspector"],
-      "query_params": { "lat": "float", "lng": "float", "radius_m": "int (default: 200)" },
-      "response": [
-        {
-          "key": "water | traffic | wind | noise | soil",
-          "label": "string",
-          "risk_level": "low | medium | high",
-          "risk_label": "string",
-          "details": [{ "k": "string", "v": "string" }],
-          "warning": "string | null"
-        }
-      ]
-    },
-    {
-      "group": "Simulation",
-      "method": "POST",
-      "path": "/simulation/run",
-      "description": "Run full simulation with selected layers — 'Tam Simulyasiya Başlat' button",
-      "roles": ["inspector"],
-      "request_body": {
-        "task_id": "string",
-        "active_layers": ["water", "traffic", "noise"],
-        "lat": "float",
-        "lng": "float"
-      },
-      "response": {
-        "impact_score": "int (0–100)",
-        "risk_level": "low | medium | high",
-        "recommendations": ["string"],
-        "run_at": "ISO8601"
-      }
-    },
-    {
-      "group": "Simulation",
-      "method": "POST",
-      "path": "/simulation/risk-assess",
-      "description": "AI evaluates all risk criteria for a task — 'AI ilə qiymətləndir' button",
-      "roles": ["inspector"],
-      "request_body": { "task_id": "string" },
-      "response": {
-        "task_id": "string",
-        "criteria": {
-          "soil": "boolean",
-          "road": "boolean",
-          "traffic": "boolean",
-          "utilities": "boolean",
-          "weather": "boolean",
-          "population": "boolean"
-        },
-        "risk_score": "int (0–100)",
-        "risk_level": "low | medium | high"
-      }
-    }
-
-  ]
+Report {
+  id              : str
+  report_id       : str | None      # display ID e.g. "MR-0241"
+  title           : str
+  status          : ReportStatus
+  date            : str | None
+  submitted_date  : str | None
+  resolved_date   : str | None
+  deadline_date   : str | None
+  deadline_passed : bool | None
+  address         : str | None
+  neighborhood    : str | None
+  category        : str | None
+  description     : str | None
+  citizen         : str | None      # citizen display name
+  assigned_to     : str | None      # assigned agency or inspector name
+  ai_routed       : str | None      # e.g. "Azərişıq ASC"
 }
+
+Proposal {
+  id          : str
+  title       : str
+  description : str
+  author      : str
+  date        : str
+  votes       : int
+  voted_by_me : bool
+  tag         : str
+}
+
+GovAlert {
+  id       : str
+  title    : str
+  body     : str
+  type     : AlertType
+  district : str
+  date     : str
+  time     : str | None
+}
+
+Task {
+  id                  : str
+  title               : str
+  address             : str
+  category            : str
+  priority            : Priority
+  status              : ReportStatus
+  date                : str
+  description         : str | None
+  agency_body         : str | None
+  agency_requirements : list[str] | None
+  map_x               : float | None    # latitude
+  map_y               : float | None    # longitude
+  citizen             : { name: str, phone: str } | None
+}
+
+KPISummary {
+  total        : int
+  resolved     : int
+  open         : int
+  sla_breaches : int
+}
+
+NeighborhoodStat {
+  name     : str
+  resolved : int
+  open     : int
+  overdue  : int
+}
+
+CategoryStat {
+  name  : str
+  value : int       # percentage or count — used in pie chart
+  color : str       # hex string e.g. "#F59E0B" — used directly in recharts Cell fill
+}
+
+MonthlyTrend {
+  month     : str   # short month label e.g. "Yan", "Fev"
+  submitted : int
+  resolved  : int
+}
+
+AgencyPerformance {
+  agency               : str
+  compliance_pct       : float
+  avg_resolution_hours : float | None
+}
+
+SLABreach {
+  report_id    : str
+  title        : str
+  neighborhood : str
+  assigned_to  : str
+  overdue_days : int
+  severity     : "critical" | "high"
+}
+
+SimLayer {
+  key        : str
+  label      : str
+  risk_level : "low" | "medium" | "high"
+  risk_label : str
+  details    : list[{ k: str, v: str }]
+  warning    : str | None
+}
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+AUTH  (/auth)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+POST /auth/register                              ← PRIMARY (new)
+  Body    : { name: str, email: str, password: str }
+  Returns : { token: str, role: Role, user: { id: str, name: str, email: str } }
+  Note    : Backend assigns role from user record (citizen by default, or preconfigured
+            for staff). Returns JWT immediately — no separate login step needed.
+
+POST /auth/login                                 ← PRIMARY (new)
+  Body    : { email: str, password: str }
+  Returns : { token: str, role: Role, user: { id: str, name: str, email: str } }
+  Note    : Works for ALL roles (citizen, inspector, executive). Frontend redirects
+            to the correct portal based on the returned role field.
+            role → redirect:  citizen → /citizen,  inspector → /inspector,  executive → /executive
+
+GET  /auth/me
+  Auth    : required
+  Returns : { id: str, name: str, role: Role, email: str, phone: str|None }
+
+POST /auth/login/staff                           ← legacy, keep for compat
+  Body    : { email: str, password: str }
+  Returns : { token: str, role: "inspector"|"executive", user: { id, name, email } }
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+REPORTS  (/reports)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+POST /reports
+  Auth    : required
+  Body    : {
+              title        : str,
+              description  : str,
+              address      : str,
+              neighborhood : str | None,
+              category     : str,             # "Yollar"|"Su kəməri"|"Elektrik"|"Abadlıq"|"Zibil"|"Digər"
+              photo_url    : str | None,
+              lat          : float | None,
+              lng          : float | None
+            }
+  Returns : Report
+
+POST /reports/ai-classify
+  Auth    : required
+  Body    : { photo_url: str }
+  Returns : { category: str | None, title: str | None }
+  Note    : Return 200 with nulls if AI cannot classify — do NOT return 422.
+
+GET  /reports/mine
+  Auth    : required (citizen)
+  Query   : status?: ReportStatus
+  Returns : list[Report]
+
+GET  /reports
+  Auth    : required (inspector, executive)
+  Query   : status?, category?, neighborhood?, page?, limit?
+  Returns : list[Report]
+
+GET  /reports/{id}
+  Auth    : required
+  Returns : Report
+
+PATCH /reports/{id}/status
+  Auth    : required (inspector, executive)
+  Body    : { status: ReportStatus }
+  Returns : Report
+
+POST /reports/{id}/sla-report
+  Auth    : required (executive)
+  Body    : {
+              report_text        : str,
+              recommended_action : str,
+              severity           : str    # "low"|"medium"|"high"|"critical"
+            }
+  Returns : { message: str }
+
+GET  /reports/export
+  Auth    : query param ?token=<jwt>    ← window.open, no headers
+  Query   : same filters as GET /reports
+  Returns : CSV file (Content-Disposition: attachment)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PROPOSALS  (/proposals)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+GET  /proposals
+  Auth    : required
+  Query   : tag?: str
+  Returns : list[Proposal]
+
+POST /proposals
+  Auth    : required
+  Body    : { title: str, description: str, tag: str }
+  Returns : Proposal
+
+POST /proposals/{id}/vote
+  Auth    : required
+  Body    : (empty)
+  Returns : Proposal    # updated votes + voted_by_me
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ALERTS  (/alerts)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+GET  /alerts
+  Auth    : required
+  Query   : type?: AlertType
+  Returns : list[GovAlert]
+
+POST /alerts
+  Auth    : required (executive)
+  Body    : { title: str, body: str, type: AlertType, district: str }
+  Returns : GovAlert
+
+DELETE /alerts/{id}
+  Auth    : required (executive)
+  Returns : { message: str }
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TASKS  (/tasks)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+GET  /tasks/mine
+  Auth    : required (inspector)
+  Returns : list[Task]
+
+GET  /tasks/{id}
+  Auth    : required
+  Returns : Task
+
+PATCH /tasks/{id}/status
+  Auth    : required (inspector)
+  Body    : { status: ReportStatus }
+  Returns : Task
+
+POST /tasks/{id}/proof
+  Auth    : required (inspector)
+  Body    : multipart/form-data  { file: <image binary> }
+  Returns : { message: str, file_url: str }
+
+POST /tasks
+  Auth    : required (executive)
+  Body    : { report_id: str, inspector_id: str, deadline: str }
+  Returns : Task
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ANALYTICS  (/analytics)  — executive only
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+GET  /analytics/summary
+  Returns : KPISummary
+
+GET  /analytics/by-neighborhood
+  Returns : list[NeighborhoodStat]
+
+GET  /analytics/by-category
+  Returns : list[CategoryStat]
+  Note    : color field must be a hex string — used directly in recharts.
+
+GET  /analytics/monthly-trend
+  Query   : year?: int
+  Returns : list[MonthlyTrend]
+
+GET  /analytics/agency-performance
+  Returns : list[AgencyPerformance]
+
+GET  /analytics/sla-breaches
+  Returns : list[SLABreach]
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SIMULATION  (/simulation)  — inspector only
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+GET  /simulation/layers
+  Query   : lat: float, lng: float
+  Returns : { layers: list[SimLayer] }
+
+POST /simulation/run
+  Body    : {
+              task_id      : str,
+              active_layers: list[str],    # list of SimLayer.key values
+              lat          : float,
+              lng          : float
+            }
+  Returns : any JSON   ← frontend renders it raw via JSON.stringify in a <pre>
+
+POST /simulation/risk-assess
+  Body    : { task_id: str }
+  Returns : any JSON   ← same raw display
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+IMPLEMENTATION NOTES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Auth flow (frontend/src/pages/AuthPage.tsx):
+   - Single page at /auth with Login / Register tabs.
+   - POST /auth/login or POST /auth/register → { token, role, user }
+   - Stores: localStorage["apexcore_token"] = token
+             localStorage["apexcore_role"]  = role
+             localStorage["apexcore_user"]  = JSON.stringify(user)
+   - Redirects: citizen→/citizen  inspector→/inspector  executive→/executive
+   - Role is entirely determined by the backend response — no role selector on frontend.
+
+2. /reports/export passes token via ?token= query param because it uses
+   window.open() — no Authorization header is possible.
+
+3. Task.map_x = latitude, Task.map_y = longitude (frontend naming is inverted
+   from convention — keep consistent with these field names).
+
+4. Simulation /run and /risk-assess responses are displayed raw as JSON in a
+   <pre> block. No schema enforced by frontend — return whatever shape is useful.
+
+5. All auth endpoints return "token" (not "access_token") — frontend stores it
+   in localStorage["apexcore_token"] and sends as Bearer.
+
+6. category values used in frontend (Azerbaijani):
+   "Yollar" | "Su kəməri" | "Elektrik" | "Abadlıq" | "Zibil" | "Digər"
+   ai-classify must return one of these exact strings or null.
+
+7. Proposal tag examples from mocks:
+   "infrastruktur" | "ətraf mühit" | "nəqliyyat" | "təhsil" | "sosial" | "texnologiya"
