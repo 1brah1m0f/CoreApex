@@ -1,10 +1,9 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
-  FileText, ThumbsUp, Bell, MapPin, Settings2,
-  CheckCircle, Clock, Plus, ThumbsUp as ThumbsUpSolid,
-  Info, AlertTriangle, CheckCircle2, ArrowUpDown,
+  FileText, Bell, MapPin, Settings2,
+  CheckCircle, Clock, Plus,
+  Info, AlertTriangle, CheckCircle2, Lightbulb,
 } from 'lucide-react'
 import { useApi } from '../hooks/useApi'
 import { reportsApi, proposalsApi, alertsApi } from '../api'
@@ -75,63 +74,6 @@ function ReportCard({ report }: { report: Report }) {
           AI → {report.ai_routed}
         </div>
       )}
-    </div>
-  )
-}
-
-// ─── Proposal Card ─────────────────────────────────
-const rankColors = [
-  'bg-amber-400 text-white',
-  'bg-blue-500 text-white',
-  'bg-orange-400 text-white',
-]
-
-function ProposalCard({
-  proposal, rank, onVote, voting,
-}: { proposal: Proposal; rank: number; onVote: (id: string) => void; voting: boolean }) {
-  const rankClass = rankColors[rank - 1] ?? 'bg-gray-200 text-gray-600'
-
-  return (
-    <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
-      <div className="flex items-start gap-3">
-        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5 ${rankClass}`}>
-          {rank}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-2 mb-1.5">
-            <h3 className="font-semibold text-gray-900 text-[15px] leading-snug">{proposal.title}</h3>
-            <span className="text-xs px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 whitespace-nowrap flex-shrink-0">
-              {proposal.tag}
-            </span>
-          </div>
-          <p className="text-sm text-gray-500 leading-relaxed mb-3">{proposal.description}</p>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs text-gray-400">
-              <span>{proposal.author}</span>
-              <span>·</span>
-              <span>{proposal.date}</span>
-              {proposal.voted_by_me && (
-                <>
-                  <span>·</span>
-                  <span className="text-blue-600 font-medium">Dəstəklədiniz ✓</span>
-                </>
-              )}
-            </div>
-            <button
-              onClick={() => onVote(proposal.id)}
-              disabled={proposal.voted_by_me || voting}
-              className={`flex items-center gap-1.5 rounded-2xl px-3 py-1.5 text-sm font-semibold transition-all
-                ${proposal.voted_by_me
-                  ? 'bg-blue-600 text-white shadow-md shadow-blue-200'
-                  : 'bg-gray-100 text-gray-600 hover:bg-blue-50 hover:text-blue-600'
-                } disabled:opacity-70`}
-            >
-              <ThumbsUp size={14} />
-              {proposal.votes}
-            </button>
-          </div>
-        </div>
-      </div>
     </div>
   )
 }
@@ -281,7 +223,6 @@ export default function CitizenPage() {
   const [tab, setTab] = useState<Tab>('reports')
   const [newReportOpen, setNewReportOpen] = useState(false)
   const [newProposalOpen, setNewProposalOpen] = useState(false)
-  const [votingId, setVotingId] = useState<string | null>(null)
 
   const reportsFetch = useApi<Report[]>(() => reportsApi.mine())
   const proposalsFetch = useApi<Proposal[]>(() => proposalsApi.list())
@@ -297,21 +238,10 @@ export default function CitizenPage() {
     resolved: reports.filter(r => r.status === 'resolved').length,
   }
 
-  async function handleVote(id: string) {
-    setVotingId(id)
-    try {
-      await proposalsApi.vote(id)
-      proposalsFetch.refetch()
-    } catch {
-      toast.success('Səsiniz qeydə alındı')
-    } finally {
-      setVotingId(null)
-    }
-  }
 
   const tabs = [
     { key: 'reports' as Tab, label: 'Müraciətlərim', icon: FileText, count: reports.length },
-    { key: 'proposals' as Tab, label: 'Təkliflər', icon: ThumbsUp, count: proposals.length },
+    { key: 'proposals' as Tab, label: 'Təkliflərim', icon: Lightbulb, count: proposals.length },
     { key: 'alerts' as Tab, label: 'Xəbərdarlıqlar', icon: Bell, count: alerts.length },
   ]
 
@@ -380,21 +310,35 @@ export default function CitizenPage() {
           <div className="flex flex-col gap-4">
             <button onClick={() => setNewProposalOpen(true)}
               className="w-full border-2 border-dashed border-blue-300 hover:border-blue-400 text-blue-600 rounded-2xl py-4 font-semibold text-base transition-all flex items-center justify-center gap-2 hover:bg-blue-50">
-              <Plus size={20} /> Yeni təklif göndər
+              <Plus size={20} /> Yeni təklif yaz
             </button>
 
             <div className="flex items-center justify-between">
-              <h2 className="font-bold text-gray-900">Cəmiyyət Təklifləri</h2>
-              <button className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700">
-                <ArrowUpDown size={13} /> Seçimlərə görə
-              </button>
+              <h2 className="font-bold text-gray-900">Mənim təkliflərim</h2>
+              <span className="text-xs text-gray-500">Səsvermə yoxdur</span>
             </div>
 
             {proposalsFetch.loading && <div className="flex justify-center py-8"><Spinner /></div>}
             <div className="flex flex-col gap-3">
-              {proposals.map((p, i) => (
-                <ProposalCard key={p.id} proposal={p} rank={i + 1} onVote={handleVote} voting={votingId === p.id} />
+              {proposals.map(p => (
+                <div key={p.id} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="font-semibold text-gray-900 text-[15px] leading-snug">{p.title}</h3>
+                    <span className="text-xs px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 whitespace-nowrap flex-shrink-0">
+                      {p.tag}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-500 leading-relaxed mt-2">{p.description}</p>
+                  <div className="flex items-center gap-2 text-xs text-gray-400 mt-2">
+                    <span>{p.date}</span>
+                    <span>·</span>
+                    <span>Yazar: {p.author}</span>
+                  </div>
+                </div>
               ))}
+              {proposals.length === 0 && (
+                <p className="text-center text-gray-400 py-16">Hələ təklif yoxdur</p>
+              )}
             </div>
           </div>
         )}

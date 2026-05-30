@@ -1,7 +1,7 @@
 import {
   Report, Proposal, GovAlert, Task,
   KPISummary, NeighborhoodStat, CategoryStat,
-  MonthlyTrend, AgencyPerformance, SLABreach,
+  MonthlyTrend, AgencyPerformance, SLABreach, AgencyRequest,
 } from '../types'
 
 export const MOCK_REPORTS: Report[] = [
@@ -250,4 +250,65 @@ export const MOCK_BREACHES: SLABreach[] = [
   { report_id: '6', title: 'Yol çuxuru — kritik', neighborhood: 'Nərimanov', assigned_to: 'Yollar Dövlət Agentliyi', overdue_days: 9, severity: 'critical' },
   { report_id: '7', title: 'Su sızıntısı — bina girişi', neighborhood: 'Xətai', assigned_to: 'Azərsu ASC', overdue_days: 6, severity: 'critical' },
   { report_id: '8', title: 'Lampa — mərkəz küçəsi', neighborhood: 'Nizami', assigned_to: 'Azərişıq ASC', overdue_days: 3, severity: 'high' },
+]
+
+export const MOCK_AGENCY_REQUESTS: AgencyRequest[] = [
+  {
+    id: 'QR-1024',
+    title: 'Qazıntı sonrası bərpa işləri',
+    from_agency: 'Azərqaz ASC',
+    to_agency: 'Yollar Dövlət Agentliyi',
+    location: 'Nərimanov, Ağa Nemətulla 72',
+    status: 'pending',
+    sent_date: '22 May 2026',
+    deadline_date: '05 İyun 2026',
+    sla_days: 14,
+    note: 'Qaz xətti təmiri bitib, yol örtüyü bərpası tələb olunur.',
+  },
+  {
+    id: 'QR-1019',
+    title: 'Yaşıllıq zonası bərpası',
+    from_agency: 'Azərsu ASC',
+    to_agency: 'Abadlıq MMC',
+    location: 'Nərimanov, Təbriz küç. 41',
+    status: 'inprogress',
+    sent_date: '19 May 2026',
+    deadline_date: '02 İyun 2026',
+    sla_days: 14,
+    note: 'Su xətti yenilənib, yaşıllıq zolağı bərpa olunmalıdır.',
+  },
+  {
+    id: 'QR-1012',
+    title: 'Asfalt örtüyünün yenilənməsi',
+    from_agency: 'Azərişıq ASC',
+    to_agency: 'Yollar Dövlət Agentliyi',
+    location: 'Nərimanov, Hüsü Hacıyev 12',
+    status: 'overdue',
+    sent_date: '10 May 2026',
+    deadline_date: '24 May 2026',
+    sla_days: 14,
+    note: 'Kabel xətti çəkilib, asfalt örtüyü bərpa edilməyib.',
+  },
+  {
+    id: 'QR-1007',
+    title: 'Bərpa işləri tamamlandı',
+    from_agency: 'Abadlıq MMC',
+    to_agency: 'Azərsu ASC',
+    location: 'Nərimanov, Faiq Yusifov 19',
+    status: 'resolved',
+    sent_date: '05 May 2026',
+    deadline_date: '19 May 2026',
+    sla_days: 14,
+  },
+  {
+    id: 'QR-1003',
+    title: 'Piyada keçidi bərpası',
+    from_agency: 'Yollar Dövlət Agentliyi',
+    to_agency: 'Azərqaz ASC',
+    location: 'Nərimanov, Xan Şuşinski 3',
+    status: 'pending',
+    sent_date: '01 May 2026',
+    deadline_date: '15 May 2026',
+    sla_days: 14,
+  },
 ]

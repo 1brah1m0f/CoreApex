@@ -4,18 +4,19 @@ import {
   Map as MapIcon, ClipboardList, Activity, MapPin,
   CheckCircle, Clock, ChevronDown, ChevronUp,
   Upload, Layers, Droplets, Car, Wind, Volume2, Mountain,
-  AlertTriangle,
+  AlertTriangle, ThumbsUp,
 } from 'lucide-react'
 import { useApi } from '../../hooks/useApi'
-import { tasksApi } from '../../api'
-import { Task, ReportStatus } from '../../types'
-import { MOCK_TASKS } from '../../mocks'
+import { tasksApi, proposalsApi } from '../../api'
+import { Proposal, Task, ReportStatus } from '../../types'
+import { MOCK_PROPOSALS, MOCK_TASKS } from '../../mocks'
 import PortalHeader from '../../components/PortalHeader'
 import TaskMap from '../../components/TaskMap'
+import ProposalCard from '../../components/ProposalCard'
 import Button from '../../components/ui/Button'
 import Spinner from '../../components/ui/Spinner'
 
-type Tab = 'route' | 'tasks' | 'simulation'
+type Tab = 'route' | 'tasks' | 'simulation' | 'proposals'
 
 function toArr<T>(val: unknown): T[] {
   return Array.isArray(val) ? (val as T[]) : []
@@ -252,7 +253,11 @@ function SimulationTab() {
 export default function InspectorPage() {
   const [tab, setTab] = useState<Tab>('route')
   const { data, loading, refetch } = useApi<Task[]>(() => tasksApi.mine())
+  const proposalsFetch = useApi<Proposal[]>(() => proposalsApi.list())
   const tasks = toArr<Task>(data).length > 0 ? toArr<Task>(data) : MOCK_TASKS
+  const proposals = toArr<Proposal>(proposalsFetch.data).length > 0
+    ? toArr<Proposal>(proposalsFetch.data)
+    : MOCK_PROPOSALS
 
   const activeTasks = tasks.filter(t => t.status !== 'resolved')
   const todayTasks = activeTasks.slice(0, 4)
@@ -261,6 +266,7 @@ export default function InspectorPage() {
     { key: 'route' as Tab, label: 'Gündalik Marşrut', icon: MapIcon },
     { key: 'tasks' as Tab, label: 'Tapşırıqlar Paneli', icon: ClipboardList },
     { key: 'simulation' as Tab, label: 'Simulyasiya Paneli', icon: Activity },
+    { key: 'proposals' as Tab, label: 'Təkliflər', icon: ThumbsUp },
   ]
 
   return (
@@ -328,6 +334,22 @@ export default function InspectorPage() {
 
         {/* ── Simulation Tab ── */}
         {tab === 'simulation' && <SimulationTab />}
+
+        {/* ── Proposals Tab ── */}
+        {tab === 'proposals' && (
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <h2 className="font-bold text-gray-900">Cəmiyyət Təklifləri</h2>
+              <span className="text-xs text-gray-500">Səsvermə müfəttiş panelindədir</span>
+            </div>
+            {proposalsFetch.loading && <div className="flex justify-center py-8"><Spinner /></div>}
+            <div className="flex flex-col gap-3">
+              {proposals.map(p => (
+                <ProposalCard key={p.id} proposal={p} />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
