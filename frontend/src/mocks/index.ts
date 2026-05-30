@@ -1,0 +1,253 @@
+import {
+  Report, Proposal, GovAlert, Task,
+  KPISummary, NeighborhoodStat, CategoryStat,
+  MonthlyTrend, AgencyPerformance, SLABreach,
+} from '../types'
+
+export const MOCK_REPORTS: Report[] = [
+  {
+    id: '1', report_id: 'MR-0241',
+    title: 'Küçə lampası işləmir',
+    status: 'resolved',
+    address: 'Hüsü Hacıyev küç. 12',
+    ai_routed: 'Azərişıq ASC',
+    category: 'Elektrik',
+    neighborhood: 'Nərimanov',
+    submitted_date: '24 May 2026',
+    resolved_date: '26 May 2026',
+    citizen: 'Əli Məmmədov',
+    description: 'Küçənin orta hissəsindəki 3 ədəd lampa 5 gündür işləmir. Axşam saatlarında qaranlıq yaranır.',
+  },
+  {
+    id: '2', report_id: 'MR-0238',
+    title: 'Su borusu sızır',
+    status: 'inprogress',
+    address: 'Elmlər Akademiyası 5',
+    ai_routed: 'Azərsu ASC',
+    category: 'Su kəməri',
+    neighborhood: 'Nərimanov',
+    submitted_date: '22 May 2026',
+    citizen: 'Əli Məmmədov',
+    description: 'Bina girişinin yanında yeraltı su borusu sızır. Yer islanıb, yol çöküntü riski var.',
+  },
+  {
+    id: '3', report_id: 'MR-0235',
+    title: 'Zibil vaxtında yığılmayıb',
+    status: 'pending',
+    address: 'Mete Turan küç. 8',
+    ai_routed: 'Abadlıq MMC',
+    category: 'Zibil',
+    neighborhood: 'Nərimanov',
+    submitted_date: '20 May 2026',
+    citizen: 'Əli Məmmədov',
+    description: '3 gündür zibil yığılmır. Çöp qutuları dolub daşır, iylənmə başlayıb.',
+  },
+  {
+    id: '4', report_id: 'MR-0229',
+    title: 'Yol çuxuru təhlükəlidir',
+    status: 'inprogress',
+    address: 'Əliağa Vahid küç. 3',
+    ai_routed: 'Yollar Dövlət Agentliyi',
+    category: 'Yollar',
+    neighborhood: 'Nərimanov',
+    submitted_date: '18 May 2026',
+    citizen: 'Əli Məmmədov',
+    description: 'Küçənin sağ hissəsindəki böyük çuxur nəqliyyat üçün təhlükə yaradır.',
+  },
+]
+
+export const MOCK_PROPOSALS: Proposal[] = [
+  {
+    id: '1',
+    title: 'Nərimanov parkında velo yolu çəkilsin',
+    description: 'Xüsusi velo marşrutu olmadığından velosipedçilər riskə məruz qalır. Yolun çəkilməsi tıxacı da azaldacaq.',
+    author: 'Tural Ə.',
+    date: '20 May 2026',
+    votes: 248,
+    voted_by_me: true,
+    tag: 'Nəqliyyat',
+  },
+  {
+    id: '2',
+    title: 'Məktəb yollarında ağıllı keçid sistemi',
+    description: 'Uşaqların məktəbə gedib-gəlməsini asanlaşdırmaq üçün senzorlu piyada keçidlərinin qurulması lazımdır.',
+    author: 'Sevinc M.',
+    date: '18 May 2026',
+    votes: 198,
+    voted_by_me: false,
+    tag: 'Təhlükəsizlik',
+  },
+  {
+    id: '3',
+    title: 'İctimai WiFi nöqtələri genişləndirilsin',
+    description: 'Rayon mərkəzindəki istirahət zonalarında pulsuz internet əlaqəsi mövcud deyil.',
+    author: 'Kamran N.',
+    date: '15 May 2026',
+    votes: 134,
+    voted_by_me: false,
+    tag: 'Texnologiya',
+  },
+  {
+    id: '4',
+    title: 'Uşaqlar üçün xüsusi oturma zonaları',
+    description: 'Parkda uşaqlar üçün ayrılmış oturma və oyun zonaları kifayət qədər deyil.',
+    author: 'Nigar H.',
+    date: '12 May 2026',
+    votes: 91,
+    voted_by_me: false,
+    tag: 'Sosial',
+  },
+  {
+    id: '5',
+    title: 'Elektrik velosipedi icarə sistemi',
+    description: 'Qonşu rayonlarda fəaliyyət göstərən elektrik velosiped icarəsi sisteminin bizdə də qurulması istənilir.',
+    author: 'Rauf S.',
+    date: '10 May 2026',
+    votes: 67,
+    voted_by_me: false,
+    tag: 'Nəqliyyat',
+  },
+]
+
+export const MOCK_ALERTS: GovAlert[] = [
+  {
+    id: '1',
+    title: 'Planlı su kəsintisi — 28 May',
+    body: 'Hüsü Hacıyev küçəsi 1-24 saylı binalarda 28 May saat 09:00-17:00 arası su kəsiləcək. Texniki işlər səbəbindəndir.',
+    type: 'warning',
+    district: 'Nərimanov',
+    date: '26 May 2026',
+    time: '09:00',
+  },
+  {
+    id: '2',
+    title: 'Küçə lampalarının texniki xidməti tamamlandı',
+    body: 'Əliağa Vahid küçəsi boyunca 47 ədəd LED lampa yeniləndi. Axşam saatlarından etibarən aktiv olacaq.',
+    type: 'success',
+    district: 'Nərimanov',
+    date: '25 May 2026',
+  },
+  {
+    id: '3',
+    title: 'Yol təmiri işləri başlayır',
+    body: 'Mete Turan küçəsinin 3-15-ci evi arasındakı hissədə asfalt örtüyünün yenilənməsi 29 May-dan başlayacaq. Alternativ yoldan istifadə edin.',
+    type: 'info',
+    district: 'Nərimanov',
+    date: '24 May 2026',
+  },
+]
+
+export const MOCK_TASKS: Task[] = [
+  {
+    id: 't1',
+    title: 'Su borusu sızıntısının aradan qaldırılması',
+    address: 'Elmlər Akademiyası 5, Nərimanov',
+    category: 'Su kəməri',
+    priority: 'high',
+    status: 'inprogress',
+    date: '22 May 2026',
+    description: 'Bina girişinin yanında yeraltı su borusu sızır. Acil müdaxilə tələb olunur.',
+    citizen: { name: 'Əli Məmmədov', phone: '+994501234567' },
+    agency_body: 'Azərsu ASC',
+    agency_requirements: ['Qazıntı icazəsi', 'Su kəsintisi bildirişi', 'Foto hesabat'],
+    map_x: 40.4108,
+    map_y: 49.8679,
+  },
+  {
+    id: 't2',
+    title: 'Yol çuxurunun bağlanması',
+    address: 'Əliağa Vahid küç. 3, Nərimanov',
+    category: 'Yollar',
+    priority: 'high',
+    status: 'pending',
+    date: '18 May 2026',
+    description: 'Böyük çuxur nəqliyyat üçün təhlükəlidir. 24 saat ərzində müdaxilə lazımdır.',
+    agency_body: 'Yollar Dövlət Agentliyi',
+    agency_requirements: ['Yol bağlama icazəsi', 'Xəbərdarlıq lövhəsi', 'Foto əvvəl/sonra'],
+    map_x: 40.4093,
+    map_y: 49.8665,
+  },
+  {
+    id: 't3',
+    title: 'Küçə lampasının dəyişdirilməsi',
+    address: 'Hüsü Hacıyev küç. 12',
+    category: 'Elektrik',
+    priority: 'medium',
+    status: 'resolved',
+    date: '24 May 2026',
+    description: '3 ədəd lampanın dəyişdirilməsi tamamlandı.',
+    agency_body: 'Azərişıq ASC',
+    map_x: 40.4115,
+    map_y: 49.8690,
+  },
+  {
+    id: 't4',
+    title: 'Zibil qutularının boşaldılması',
+    address: 'Mete Turan küç. 8',
+    category: 'Zibil',
+    priority: 'medium',
+    status: 'pending',
+    date: '20 May 2026',
+    agency_body: 'Abadlıq MMC',
+    map_x: 40.4099,
+    map_y: 49.8671,
+  },
+  {
+    id: 't5',
+    title: 'Piyada yolunun asfaltlanması',
+    address: 'Rəşid Behbudov küç. 15',
+    category: 'Yollar',
+    priority: 'low',
+    status: 'inprogress',
+    date: '16 May 2026',
+    agency_body: 'Yollar Dövlət Agentliyi',
+    map_x: 40.4088,
+    map_y: 49.8655,
+  },
+]
+
+export const MOCK_KPI: KPISummary = {
+  total: 10,
+  resolved: 4,
+  open: 6,
+  sla_breaches: 3,
+}
+
+export const MOCK_NEIGHBORHOOD: NeighborhoodStat[] = [
+  { name: 'H.Hacıyev', resolved: 14, open: 12, overdue: 41 },
+  { name: 'Elmlər A.', resolved: 8, open: 9, overdue: 27 },
+  { name: 'Mete Turan', resolved: 18, open: 15, overdue: 54 },
+  { name: 'Ə.Vahid', resolved: 12, open: 11, overdue: 38 },
+  { name: 'Nərimanov', resolved: 22, open: 18, overdue: 70 },
+  { name: 'Əhmədbəyli', resolved: 15, open: 13, overdue: 46 },
+]
+
+export const MOCK_CATEGORY: CategoryStat[] = [
+  { name: 'Elektrik', value: 35, color: '#F59E0B' },
+  { name: 'Su Təchizatı', value: 25, color: '#3B82F6' },
+  { name: 'Yol', value: 28, color: '#F97316' },
+  { name: 'Sanitariya', value: 8, color: '#10B981' },
+  { name: 'Digər', value: 4, color: '#8B5CF6' },
+]
+
+export const MOCK_TREND: MonthlyTrend[] = [
+  { month: 'Yan', submitted: 18, resolved: 12 },
+  { month: 'Fev', submitted: 22, resolved: 17 },
+  { month: 'Mar', submitted: 31, resolved: 24 },
+  { month: 'Apr', submitted: 27, resolved: 22 },
+  { month: 'May', submitted: 44, resolved: 14 },
+]
+
+export const MOCK_AGENCY: AgencyPerformance[] = [
+  { agency: 'Azərişıq ASC', compliance_pct: 94, avg_resolution_hours: 18 },
+  { agency: 'Azərsu ASC', compliance_pct: 87, avg_resolution_hours: 24 },
+  { agency: 'Abadlıq MMC', compliance_pct: 76, avg_resolution_hours: 36 },
+  { agency: 'Yollar Dövlət Agentliyi', compliance_pct: 63, avg_resolution_hours: 72 },
+]
+
+export const MOCK_BREACHES: SLABreach[] = [
+  { report_id: '5', title: 'Zibil yığılmır — 5 gün', neighborhood: 'Sabunçu', assigned_to: 'Abadlıq MMC', overdue_days: 5, severity: 'high' },
+  { report_id: '6', title: 'Yol çuxuru — kritik', neighborhood: 'Nərimanov', assigned_to: 'Yollar Dövlət Agentliyi', overdue_days: 9, severity: 'critical' },
+  { report_id: '7', title: 'Su sızıntısı — bina girişi', neighborhood: 'Xətai', assigned_to: 'Azərsu ASC', overdue_days: 6, severity: 'critical' },
+  { report_id: '8', title: 'Lampa — mərkəz küçəsi', neighborhood: 'Nizami', assigned_to: 'Azərişıq ASC', overdue_days: 3, severity: 'high' },
+]

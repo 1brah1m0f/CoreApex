@@ -1,7 +1,15 @@
 {
   "permissions": {
     "allow": [
-      "Bash(Expand-Archive -Path \"Smart City Management Platform.zip\" -DestinationPath \".\\\\smart-city-extracted\" -Force)"
+      "Bash(Expand-Archive -Path \"Smart City Management Platform.zip\" -DestinationPath \".\\\\smart-city-extracted\" -Force)",
+      "Bash(pnpm vite *)",
+      "Bash(Get-ChildItem \"smart-city-extracted\" -Name)",
+      "Bash(pnpm install *)",
+      "Bash(pnpm approve-builds *)",
+      "Bash(node_modules/.bin/vite build *)",
+      "Bash(node_modules/.bin/vite --port 5175)",
+      "Bash(Remove-Item -Recurse -Force \"C:\\\\Users\\\\sixii\\\\OneDrive\\\\Desktop\\\\coding\\\\CoreApex\\\\smart-city-extracted\")",
+      "Bash(Remove-Item -Recurse -Force \"C:\\\\Users\\\\sixii\\\\OneDrive\\\\Desktop\\\\coding\\\\CoreApex\\\\node_modules\")"
     ]
   }
 }
