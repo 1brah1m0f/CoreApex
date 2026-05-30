@@ -4,6 +4,7 @@ import {
   FileText, Bell, MapPin, Settings2,
   CheckCircle, Clock, Plus,
   Info, AlertTriangle, CheckCircle2, Lightbulb,
+  ImageIcon, Upload, X,
 } from 'lucide-react'
 import { useApi } from '../hooks/useApi'
 import { reportsApi, proposalsApi, alertsApi } from '../api'
@@ -105,15 +106,16 @@ function AlertCard({ alert }: { alert: GovAlert }) {
 
 // ─── New Report Modal ──────────────────────────────
 function NewReportModal({ open, onClose, onSuccess }: { open: boolean; onClose: () => void; onSuccess: () => void }) {
-  const [form, setForm] = useState({ title: '', description: '', address: '', neighborhood: '', category: '' })
+  const [form, setForm] = useState({ title: '', description: '', category: '' })
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null)
+  const [images, setImages] = useState<{ file: File; url: string }[]>([])
   const [submitting, setSubmitting] = useState(false)
   const categories = ['Yollar', 'Su kəməri', 'Elektrik', 'Abadlıq', 'Zibil', 'Digər']
 
   function setF(k: string, v: string) { setForm(f => ({ ...f, [k]: v })) }
 
   async function submit() {
-    if (!form.title || !form.description || !form.address || !form.category) {
+    if (!form.title || !form.description || !form.category) {
       toast.error('Bütün sahələri doldurun')
       return
     }
@@ -132,6 +134,33 @@ function NewReportModal({ open, onClose, onSuccess }: { open: boolean; onClose: 
     }
   }
 
+  function addImages(files: FileList | null) {
+    if (!files) return
+    const allowed = Array.from(files).filter(f => f.type.startsWith('image/'))
+    if (allowed.length !== files.length) toast.error('Yalnız şəkil faylları qəbul edilir')
+    const next = allowed.map(f => ({ file: f, url: URL.createObjectURL(f) }))
+    setImages(prev => [...prev, ...next])
+  }
+
+  function removeImage(url: string) {
+    setImages(prev => {
+      const img = prev.find(i => i.url === url)
+      if (img) URL.revokeObjectURL(img.url)
+      return prev.filter(i => i.url !== url)
+    })
+  }
+
+  function useGps() {
+    if (!navigator.geolocation) {
+      toast.error('GPS dəstəklənmir')
+      return
+    }
+    navigator.geolocation.getCurrentPosition(
+      pos => setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => toast.error('GPS icazəsi verilmədi')
+    )
+  }
+
   return (
     <Modal open={open} onClose={onClose} title="Yeni Müraciət"
       footer={
@@ -142,26 +171,74 @@ function NewReportModal({ open, onClose, onSuccess }: { open: boolean; onClose: 
       }
     >
       <div className="flex flex-col gap-4">
-        <Input label="Başlıq" value={form.title} onChange={e => setF('title', e.target.value)} placeholder="Problemin qısa təsviri" />
-        <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700">Ətraflı təsvir</label>
-          <textarea value={form.description} onChange={e => setF('description', e.target.value)} rows={3}
-            className="rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 resize-none"
-            placeholder="Problemi ətraflı izah edin..." />
+        <div className="rounded-2xl border border-gray-100 bg-white p-4">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Müraciət məlumatı</p>
+          <div className="mt-3 flex flex-col gap-3">
+            <Input label="Başlıq" value={form.title} onChange={e => setF('title', e.target.value)} placeholder="Problemin qısa təsviri" />
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium text-gray-700">Ətraflı təsvir</label>
+              <textarea value={form.description} onChange={e => setF('description', e.target.value)} rows={3}
+                className="rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 resize-none"
+                placeholder="Problemi ətraflı izah edin..." />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium text-gray-700">Kateqoriya</label>
+              <select value={form.category} onChange={e => setF('category', e.target.value)}
+                className="rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100">
+                <option value="">Seçin...</option>
+                {categories.map(c => <option key={c}>{c}</option>)}
+              </select>
+            </div>
+          </div>
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          <Input label="Ünvan" value={form.address} onChange={e => setF('address', e.target.value)} placeholder="Küçə, bina №" />
-          <Input label="Rayon" value={form.neighborhood} onChange={e => setF('neighborhood', e.target.value)} placeholder="Məs. Nərimanov" />
+
+        <div className="rounded-2xl border border-gray-100 bg-white p-4">
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-medium text-gray-700 flex items-center gap-1.5">
+              <MapPin size={14} className="text-blue-500" /> GPS / Xəritə
+            </label>
+            <button onClick={useGps} type="button" className="text-xs font-semibold text-blue-600 hover:text-blue-700">
+              GPS-dən götür
+            </button>
+          </div>
+          <p className="text-xs text-gray-400 mt-1">Xəritədən yer seçin və ya GPS icazəsi verin</p>
+          <div className="mt-2">
+            <LocationPickerMap value={location} onChange={setLocation} showLabel={false} height={180} />
+          </div>
         </div>
-        <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700">Kateqoriya</label>
-          <select value={form.category} onChange={e => setF('category', e.target.value)}
-            className="rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100">
-            <option value="">Seçin...</option>
-            {categories.map(c => <option key={c}>{c}</option>)}
-          </select>
+
+        <div className="rounded-2xl border border-gray-100 bg-white p-4">
+          <label className="text-sm font-medium text-gray-700 flex items-center gap-1.5">
+            <ImageIcon size={14} className="text-blue-500" /> Şəkillər (istəyə bağlı)
+          </label>
+          <p className="text-xs text-gray-400 mt-1">Hadisəni daha aydın təsvir etmək üçün şəkil əlavə edin</p>
+          <label className="mt-3 rounded-2xl border-2 border-dashed border-gray-200 hover:border-blue-300 hover:bg-gray-50 transition-all p-4 cursor-pointer flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center">
+              <Upload size={16} className="text-blue-500" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-gray-700">Şəkil əlavə et</p>
+              <p className="text-xs text-gray-400">JPG, PNG, WEBP · bir neçə seçilə bilər</p>
+            </div>
+            <input type="file" accept="image/*" multiple className="hidden" onChange={e => addImages(e.target.files)} />
+          </label>
+          {images.length > 0 && (
+            <div className="grid grid-cols-3 gap-2 mt-3">
+              {images.map(img => (
+                <div key={img.url} className="relative rounded-xl overflow-hidden bg-gray-100 aspect-square">
+                  <img src={img.url} alt={img.file.name} className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => removeImage(img.url)}
+                    className="absolute top-1 right-1 w-6 h-6 rounded-full bg-white/90 flex items-center justify-center"
+                  >
+                    <X size={12} className="text-red-500" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-        <LocationPickerMap value={location} onChange={setLocation} />
       </div>
     </Modal>
   )
@@ -242,7 +319,7 @@ export default function CitizenPage() {
   const tabs = [
     { key: 'reports' as Tab, label: 'Müraciətlərim', icon: FileText, count: reports.length },
     { key: 'proposals' as Tab, label: 'Təkliflərim', icon: Lightbulb, count: proposals.length },
-    { key: 'alerts' as Tab, label: 'Xəbərdarlıqlar', icon: Bell, count: alerts.length },
+    { key: 'alerts' as Tab, label: 'Bildirişlər', icon: Bell, count: alerts.length },
   ]
 
   return (
@@ -261,10 +338,12 @@ export default function CitizenPage() {
                   ${active ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
                 <Icon size={16} />
                 {t.label}
-                <span className={`rounded-full text-xs px-1.5 py-0.5 font-bold
-                  ${active ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500'}`}>
-                  {t.count}
-                </span>
+                {t.count !== null && (
+                  <span className={`rounded-full text-xs px-1.5 py-0.5 font-bold
+                    ${active ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500'}`}>
+                    {t.count}
+                  </span>
+                )}
               </button>
             )
           })}
@@ -279,7 +358,7 @@ export default function CitizenPage() {
           <div className="flex flex-col gap-4">
             <button onClick={() => setNewReportOpen(true)}
               className="w-full bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white rounded-2xl py-4 font-semibold text-base transition-all shadow-lg shadow-blue-200 flex items-center justify-center gap-2">
-              <Plus size={20} /> + Yeni müraciət
+              Yeni müraciət
             </button>
 
             {/* KPI boxes */}
@@ -354,6 +433,7 @@ export default function CitizenPage() {
             )}
           </div>
         )}
+
       </div>
 
       <NewReportModal open={newReportOpen} onClose={() => setNewReportOpen(false)} onSuccess={reportsFetch.refetch} />
