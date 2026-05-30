@@ -262,6 +262,10 @@ export default function InspectorPage() {
   const activeTasks = tasks.filter(t => t.status !== 'resolved')
   const todayTasks = activeTasks.slice(0, 4)
 
+  const storedUser = localStorage.getItem('apexcore_user')
+  const currentUser = storedUser ? JSON.parse(storedUser) : null
+  const userName = currentUser?.full_name || currentUser?.name || 'Müfəttit'
+
   const tabs = [
     { key: 'route' as Tab, label: 'Gündalik Marşrut', icon: MapIcon },
     { key: 'tasks' as Tab, label: 'Tapşırıqlar Paneli', icon: ClipboardList },
@@ -271,7 +275,7 @@ export default function InspectorPage() {
 
   return (
     <div className="min-h-screen bg-[#F5F6FA]">
-      <PortalHeader role="inspector" userName="Orxan Hüseynov" notifCount={2} />
+      <PortalHeader role="inspector" userName={userName} notifCount={activeTasks.length} />
 
       {/* Tab Nav */}
       <div className="bg-white border-b border-gray-100 sticky top-[61px] z-30">

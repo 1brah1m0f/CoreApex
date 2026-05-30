@@ -17,10 +17,18 @@ export const authApi = {
 // ─── Reports ───────────────────────────────────────────
 export const reportsApi = {
   create: (data: unknown) =>
-    client.post('/reports', data),
+    client.post('/reports/', data),
 
   aiClassify: (photo_url: string) =>
     client.post('/reports/ai-classify', { photo_url }),
+
+  classifyUpload: (file: File) => {
+    const fd = new FormData()
+    fd.append('file', file)
+    return client.post('/reports/classify-upload', fd, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+  },
 
   mine: (status?: string) =>
     client.get('/reports/mine', { params: status ? { status } : {} }),
@@ -50,7 +58,7 @@ export const proposalsApi = {
     client.get('/proposals', { params: tag ? { tag } : {} }),
 
   create: (title: string, description: string, tag: string) =>
-    client.post('/proposals', { title, description, tag }),
+    client.post('/proposals/', { title, description, tag }),
 
   vote: (id: string) =>
     client.post(`/proposals/${id}/vote`),
@@ -62,7 +70,7 @@ export const alertsApi = {
     client.get('/alerts', { params: type ? { type } : {} }),
 
   create: (title: string, body: string, type: string, district: string) =>
-    client.post('/alerts', { title, body, type, district }),
+    client.post('/alerts/', { title, body, type, district }),
 
   delete: (id: string) =>
     client.delete(`/alerts/${id}`),
@@ -86,7 +94,7 @@ export const tasksApi = {
   },
 
   create: (report_id: string, inspector_id: string, deadline: string) =>
-    client.post('/tasks', { report_id, inspector_id, deadline }),
+    client.post('/tasks/', { report_id, inspector_id, deadline }),
 }
 
 // ─── Analytics ─────────────────────────────────────────

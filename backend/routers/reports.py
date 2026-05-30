@@ -1,80 +1,146 @@
 import uuid
 from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from supabase import Client
 
 from core.dependencies import get_supabase
 from models.schemas import ReportCreateRequest, AIClassifyRequest
 from services.security import fetch_image, verify_image_authenticity
-from services.ai_classifier import classify_and_route_image
+from services.groq_classifier import classify_and_route_image_llama
 
 router = APIRouter(prefix="/reports", tags=["Reports"])
 
+CATEGORY_AGENCY = {
+    "Yollar": "AAYDA",
+    "Zibil": "MKTB",
+    "Abadlıq": "Yaşıllaşdırma Təsərrüfatı",
+    "Su kəməri": "Azərsu",
+    "Elektrik": "Azərişıq",
+}
+
+
+# ── AI endpoints ────────────────────────────────────────────────────────────
+
+@router.post("/classify-upload")
+async def classify_from_upload(
+    file: UploadFile = File(...),
+    supabase: Client = Depends(get_supabase),
+):
+    image_bytes = await file.read()
+
+    try:
+        verify_image_authenticity(image_bytes)
+    except ValueError:
+        pass
+
+    ai_result = classify_and_route_image_llama(image_bytes)
+
+    photo_url = None
+    try:
+        ext = (file.filename or "image.jpg").rsplit(".", 1)[-1].lower()
+        storage_path = f"reports/{uuid.uuid4()}.{ext}"
+        supabase.storage.from_("report-photos").upload(
+            storage_path,
+            image_bytes,
+            {"content-type": file.content_type or "image/jpeg"},
+        )
+        photo_url = supabase.storage.from_("report-photos").get_public_url(storage_path)
+    except Exception:
+        pass
+
+    return {
+        "photo_url": photo_url,
+        "category": ai_result.get("category"),
+        "title": ai_result.get("title") or ai_result.get("description", ""),
+        "description": ai_result.get("description", ""),
+        "assigned_agency": ai_result.get("assigned_agency"),
+        "confidence": ai_result.get("confidence"),
+    }
+
+
 @router.post("/ai-classify")
 async def ai_classify_report(request: AIClassifyRequest):
-    """
-    1. Şəkli URL-dən yükləyir.
-    2. İkiqat Təhlükəsizlik Süzgəcindən (Fake / AI) keçirir.
-    3. MobileNetV2 (AI) ilə analiz edib müvafiq dövlət qurumuna / prioritetə map edir.
-    """
     try:
-        # Şəklin baytlarını alırıq
         image_bytes = await fetch_image(request.photo_url)
-        
-        # Süzgəcdən keçiririk (Error atarsa birbaşa except bloka düşəcək)
         verify_image_authenticity(image_bytes)
-        
-        # Süni intellekt analizi
-        ai_result = classify_and_route_image(image_bytes)
-        
-        return ai_result
-        
+        ai_result = classify_and_route_image_llama(image_bytes)
+        return {
+            "category": ai_result.get("category"),
+            "title": ai_result.get("title") or ai_result.get("description"),
+            "description": ai_result.get("description"),
+            "assigned_agency": ai_result.get("assigned_agency"),
+            "confidence": ai_result.get("confidence"),
+        }
     except ValueError as ve:
         raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Sistem xətası: {str(e)}")
 
 
+# ── CRUD endpoints ──────────────────────────────────────────────────────────
+
 @router.post("/")
 async def create_report(request: ReportCreateRequest, supabase: Client = Depends(get_supabase)):
-    """
-    Vətəndaş müraciətinin verilənlər bazasına (Supabase) yazılması.
-    """
-    # Normalda bu hissədə auth tokendən user id tapılır. Mock misalda:
-    user_id = "mock-uuid-1234"
     report_id = f"MR-{str(uuid.uuid4())[:8].upper()}"
-    
-    # Əgər AI routing yoxdursa, default qurum təyin edirik
-    assigned_agency = "Təyin edilməyib"
-    if request.category == "road": assigned_agency = "AAYDA"
-    elif request.category == "waste": assigned_agency = "MKTB"
-    elif request.category == "water": assigned_agency = "Azərsu"
-    
+    user_id = "mock-uuid-1234"
+
+    assigned_agency = request.assigned_agency or CATEGORY_AGENCY.get(request.category, "Təyin edilməyib")
+
     data = {
         "id": report_id,
+        "title": request.title,
         "category": request.category,
         "description": request.description,
         "address": request.address,
+        "neighborhood": request.neighborhood,
         "lat": request.lat,
         "lng": request.lng,
         "photo_url": request.photo_url,
         "status": "pending",
         "assigned_agency": assigned_agency,
+        "ai_routed": request.ai_routed,
         "created_at": datetime.utcnow().isoformat(),
-        "citizen_id": user_id
+        "citizen_id": user_id,
     }
-    
+
     try:
-        # Cədvəl "reports" adlanacağı təqdirdə:
-        # response = supabase.table("reports").insert(data).execute()
-        # return response.data[0]
-        
-        # Supabase mövcud olmadığı rejimdə (test üçün) datanı özünü qaytarırıq:
-        return data
+        response = supabase.table("reports").insert(data).execute()
+        return response.data[0] if response.data else data
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Baza xətası: {str(e)}")
+        # Table mövcud deyilsə aşağıdakı SQL-i Supabase Dashboard-da çalışdırın:
+        # (backend/supabase_schema.sql faylına baxın)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Verilənlər bazası xətası: {str(e)}. Supabase-də 'reports' cədvəlini yaradın."
+        )
+
+
+@router.get("/mine")
+async def get_my_reports(status: str = None, supabase: Client = Depends(get_supabase)):
+    user_id = "mock-uuid-1234"
+    try:
+        query = supabase.table("reports").select("*").eq("citizen_id", user_id).order("created_at", desc=True)
+        if status:
+            query = query.eq("status", status)
+        response = query.execute()
+        return response.data or []
+    except Exception:
+        return []
+
+
+@router.get("/{report_id}")
+async def get_report(report_id: str, supabase: Client = Depends(get_supabase)):
+    try:
+        response = supabase.table("reports").select("*").eq("id", report_id).single().execute()
+        return response.data
+    except Exception:
+        raise HTTPException(status_code=404, detail="Müraciət tapılmadı")
+
 
 @router.get("/")
-async def get_reports():
-    """Bütün müraciətləri siyahı şəklində qaytarır."""
-    return {"total": 0, "results": []}
+async def get_reports(supabase: Client = Depends(get_supabase)):
+    try:
+        response = supabase.table("reports").select("*").order("created_at", desc=True).execute()
+        return {"total": len(response.data), "results": response.data}
+    except Exception:
+        return {"total": 0, "results": []}

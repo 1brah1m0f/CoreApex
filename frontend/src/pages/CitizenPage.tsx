@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
   FileText, Bell, MapPin, Settings2,
@@ -106,7 +107,7 @@ function AlertCard({ alert }: { alert: GovAlert }) {
 
 // ─── New Report Modal ──────────────────────────────
 function NewReportModal({ open, onClose, onSuccess }: { open: boolean; onClose: () => void; onSuccess: () => void }) {
-  const [form, setForm] = useState({ title: '', description: '', category: '' })
+  const [form, setForm] = useState({ title: '', description: '', category: '', address: '' })
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null)
   const [images, setImages] = useState<{ file: File; url: string }[]>([])
   const [submitting, setSubmitting] = useState(false)
@@ -121,7 +122,7 @@ function NewReportModal({ open, onClose, onSuccess }: { open: boolean; onClose: 
     }
     setSubmitting(true)
     try {
-      await reportsApi.create({ ...form, lat: location?.lat, lng: location?.lng })
+      await reportsApi.create({ ...form, lat: location?.lat ?? 0, lng: location?.lng ?? 0 })
       toast.success('Müraciət göndərildi')
       onSuccess()
       onClose()
@@ -189,6 +190,7 @@ function NewReportModal({ open, onClose, onSuccess }: { open: boolean; onClose: 
                 {categories.map(c => <option key={c}>{c}</option>)}
               </select>
             </div>
+            <Input label="Ünvan (istəyə bağlı)" value={form.address} onChange={e => setF('address', e.target.value)} placeholder="Küçə, bina nömrəsi" />
           </div>
         </div>
 
@@ -297,9 +299,13 @@ function NewProposalModal({ open, onClose, onSuccess }: { open: boolean; onClose
 
 // ─── Main Page ─────────────────────────────────────
 export default function CitizenPage() {
+  const navigate = useNavigate()
   const [tab, setTab] = useState<Tab>('reports')
-  const [newReportOpen, setNewReportOpen] = useState(false)
   const [newProposalOpen, setNewProposalOpen] = useState(false)
+
+  const storedUser = localStorage.getItem('apexcore_user')
+  const currentUser = storedUser ? JSON.parse(storedUser) : null
+  const userName = currentUser?.full_name || currentUser?.name || 'İstifadəçi'
 
   const reportsFetch = useApi<Report[]>(() => reportsApi.mine())
   const proposalsFetch = useApi<Proposal[]>(() => proposalsApi.list())
@@ -324,7 +330,7 @@ export default function CitizenPage() {
 
   return (
     <div className="min-h-screen bg-[#F5F6FA]">
-      <PortalHeader role="citizen" userName="Əli Məmmədov" notifCount={alerts.length} />
+      <PortalHeader role="citizen" userName={userName} notifCount={alerts.length} />
 
       {/* Tab Nav */}
       <div className="bg-white border-b border-gray-100 sticky top-[61px] z-30">
@@ -356,9 +362,9 @@ export default function CitizenPage() {
         {/* ── Reports Tab ── */}
         {tab === 'reports' && (
           <div className="flex flex-col gap-4">
-            <button onClick={() => setNewReportOpen(true)}
+            <button onClick={() => navigate('/citizen/reports/new')}
               className="w-full bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white rounded-2xl py-4 font-semibold text-base transition-all shadow-lg shadow-blue-200 flex items-center justify-center gap-2">
-              Yeni müraciət
+              + Yeni müraciət (AI)
             </button>
 
             {/* KPI boxes */}
@@ -436,7 +442,6 @@ export default function CitizenPage() {
 
       </div>
 
-      <NewReportModal open={newReportOpen} onClose={() => setNewReportOpen(false)} onSuccess={reportsFetch.refetch} />
       <NewProposalModal open={newProposalOpen} onClose={() => setNewProposalOpen(false)} onSuccess={proposalsFetch.refetch} />
     </div>
   )

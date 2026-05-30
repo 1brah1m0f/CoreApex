@@ -9,9 +9,9 @@ import Input from '../components/ui/Input'
 type AuthMode = 'login' | 'register'
 
 interface LoginResponse {
-  token: string
+  access_token: string
   role: 'citizen' | 'inspector' | 'executive'
-  user: { id: string; name: string; email: string }
+  user: { id: string; full_name: string; email: string }
 }
 
 const ROLE_PATHS: Record<string, string> = {
@@ -59,8 +59,8 @@ export default function AuthPage() {
         res = await authApi.login(form.email.trim(), form.password)
       }
 
-      const { token, role, user } = res as LoginResponse
-      localStorage.setItem('apexcore_token', token)
+      const { access_token, role, user } = res as LoginResponse
+      localStorage.setItem('apexcore_token', access_token)
       localStorage.setItem('apexcore_role', role)
       localStorage.setItem('apexcore_user', JSON.stringify(user))
 
@@ -163,7 +163,12 @@ export default function AuthPage() {
             </Button>
           </form>
 
-          <p className="text-center text-sm text-gray-500 mt-5">
+          {mode === 'login' && (
+            <p className="text-center text-xs text-gray-400 mt-3 bg-gray-50 rounded-lg py-2 px-3">
+              İşçi (inspektor / rəhbərlik) hesabları admin tərəfindən yaradılır
+            </p>
+          )}
+          <p className="text-center text-sm text-gray-500 mt-4">
             {mode === 'login' ? 'Hesabınız yoxdur?' : 'Hesabınız var?'}{' '}
             <button
               onClick={() => switchMode(mode === 'login' ? 'register' : 'login')}

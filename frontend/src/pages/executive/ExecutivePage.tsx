@@ -496,6 +496,10 @@ export default function ExecutivePage() {
   const kpi = summaryApi.data ?? MOCK_KPI
   const notifCount = toArr<GovAlert>(alertsCount.data).length || MOCK_ALERTS.length
 
+  const storedUser = localStorage.getItem('apexcore_user')
+  const currentUser = storedUser ? JSON.parse(storedUser) : null
+  const userName = currentUser?.full_name || currentUser?.name || 'Rəhbərlik'
+
   const tabs = [
     { key: 'analytics' as Tab, label: 'Analitik Panel', icon: BarChart2 },
     { key: 'archive' as Tab, label: 'Rəqəmsal Arxiv', icon: Archive },
@@ -505,7 +509,7 @@ export default function ExecutivePage() {
 
   return (
     <div className="min-h-screen bg-[#F5F6FA]">
-      <PortalHeader role="executive" userName="Admin Rəhbərlik" notifCount={notifCount} />
+      <PortalHeader role="executive" userName={userName} notifCount={notifCount} />
 
       <div className="max-w-6xl mx-auto px-4 py-5">
         {/* KPI row */}

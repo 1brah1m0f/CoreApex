@@ -3,6 +3,11 @@ from typing import Optional, List, Dict, Any
 from datetime import datetime
 
 # --- Auth Schemas ---
+class RegisterRequest(BaseModel):
+    name: str
+    email: str
+    password: str
+
 class StaffLoginRequest(BaseModel):
     email: str
     password: str
@@ -20,12 +25,15 @@ class TokenResponse(BaseModel):
 
 # --- Report Schemas ---
 class ReportCreateRequest(BaseModel):
+    title: str
     category: str
-    description: str = Field(..., min_length=5)
-    address: str
-    lat: float
-    lng: float
+    description: str
+    address: Optional[str] = ""
+    neighborhood: Optional[str] = None
+    lat: Optional[float] = 0.0
+    lng: Optional[float] = 0.0
     photo_url: Optional[str] = None
+    assigned_agency: Optional[str] = None
     ai_routed: Optional[bool] = False
 
 class AIClassifyRequest(BaseModel):
