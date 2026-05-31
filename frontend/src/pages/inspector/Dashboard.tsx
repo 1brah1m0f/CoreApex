@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useApi } from '../../hooks/useApi'
 import { tasksApi } from '../../api'
 import { Task } from '../../types'
+import { MOCK_TASKS } from '../../mocks'
 import KPICard from '../../components/KPICard'
 import TaskCard from '../../components/TaskCard'
 import Spinner from '../../components/ui/Spinner'
@@ -14,7 +15,8 @@ function toArr<T>(val: unknown): T[] {
 export default function InspectorDashboard() {
   const { data, loading } = useApi<Task[]>(() => tasksApi.mine())
 
-  const all = toArr<Task>(data)
+  const apiAll = toArr<Task>(data)
+  const all = apiAll.length ? apiAll : MOCK_TASKS
   const kpi = {
     total: all.length,
     inprogress: all.filter(t => t.status === 'inprogress').length,

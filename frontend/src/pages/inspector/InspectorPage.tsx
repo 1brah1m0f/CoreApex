@@ -9,6 +9,7 @@ import {
 import { useApi } from '../../hooks/useApi'
 import { tasksApi, proposalsApi } from '../../api'
 import { Proposal, Task, ReportStatus } from '../../types'
+import { MOCK_PROPOSALS, MOCK_TASKS } from '../../mocks'
 import PortalHeader from '../../components/PortalHeader'
 import TaskMap from '../../components/TaskMap'
 import ProposalCard from '../../components/ProposalCard'
@@ -277,8 +278,10 @@ export default function InspectorPage() {
   const [highlightId, setHighlightId] = useState<string | null>(null)
   const { data, loading, refetch } = useApi<Task[]>(() => tasksApi.mine())
   const proposalsFetch = useApi<Proposal[]>(() => proposalsApi.list())
-  const tasks = toArr<Task>(data)
-  const proposals = toArr<Proposal>(proposalsFetch.data)
+  const apiTasks = toArr<Task>(data)
+  const tasks = apiTasks.length ? apiTasks : MOCK_TASKS
+  const apiProposals = toArr<Proposal>(proposalsFetch.data)
+  const proposals = apiProposals.length ? apiProposals : MOCK_PROPOSALS
 
   function showOnMap(taskId: string) {
     setHighlightId(taskId)

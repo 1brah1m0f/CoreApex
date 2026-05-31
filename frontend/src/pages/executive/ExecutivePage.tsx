@@ -17,6 +17,10 @@ import {
   KPISummary, NeighborhoodStat, CategoryStat, MonthlyTrend,
   AgencyPerformance, SLABreach, Report, GovAlert, AlertType, AgencyRequest,
 } from '../../types'
+import {
+  MOCK_KPI, MOCK_NEIGHBORHOOD, MOCK_CATEGORY, MOCK_TREND,
+  MOCK_AGENCY, MOCK_BREACHES, MOCK_REPORTS, MOCK_ALERTS, MOCK_AGENCY_REQUESTS,
+} from '../../mocks'
 import PortalHeader from '../../components/PortalHeader'
 import Button from '../../components/ui/Button'
 import Input from '../../components/ui/Input'
@@ -63,11 +67,11 @@ function AnalyticsTab() {
   const agencyApi = useApi<AgencyPerformance[]>(() => analyticsApi.agencyPerformance())
   const breachApi = useApi<SLABreach[]>(() => analyticsApi.slaBreaches())
 
-  const neighborhoods = toArr<NeighborhoodStat>(neighborhoodApi.data)
-  const categories = toArr<CategoryStat>(categoryApi.data)
-  const trend = toArr<MonthlyTrend>(trendApi.data)
-  const agencies = toArr<AgencyPerformance>(agencyApi.data)
-  const breaches = toArr<SLABreach>(breachApi.data)
+  const neighborhoods = toArr<NeighborhoodStat>(neighborhoodApi.data).length ? toArr<NeighborhoodStat>(neighborhoodApi.data) : MOCK_NEIGHBORHOOD
+  const categories = toArr<CategoryStat>(categoryApi.data).length ? toArr<CategoryStat>(categoryApi.data) : MOCK_CATEGORY
+  const trend = toArr<MonthlyTrend>(trendApi.data).length ? toArr<MonthlyTrend>(trendApi.data) : MOCK_TREND
+  const agencies = toArr<AgencyPerformance>(agencyApi.data).length ? toArr<AgencyPerformance>(agencyApi.data) : MOCK_AGENCY
+  const breaches = toArr<SLABreach>(breachApi.data).length ? toArr<SLABreach>(breachApi.data) : MOCK_BREACHES
 
   return (
     <div className="flex flex-col gap-6">
@@ -182,7 +186,8 @@ function ArchiveTab() {
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('')
   const { data } = useApi<Report[]>(() => reportsApi.all(status ? { status } : {}), [status])
-  const list = toArr<Report>(data)
+  const apiList = toArr<Report>(data)
+  const list = apiList.length ? apiList : MOCK_REPORTS
 
   const filtered = list.filter(r =>
     !search || r.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -262,7 +267,7 @@ function OversightTab() {
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState<Report['status'] | ''>('')
 
-  const list: AgencyRequest[] = []
+  const list: AgencyRequest[] = MOCK_AGENCY_REQUESTS
   const filtered = list.filter(r =>
     (!status || r.status === status) &&
     (!search ||
@@ -400,7 +405,8 @@ function OversightTab() {
 // ─── Alerts Tab ────────────────────────────────────
 function AlertsTab() {
   const { data, refetch } = useApi<GovAlert[]>(() => alertsApi.list())
-  const list = toArr<GovAlert>(data)
+  const apiAlerts = toArr<GovAlert>(data)
+  const list = apiAlerts.length ? apiAlerts : MOCK_ALERTS
   const [deleting, setDeleting] = useState<string | null>(null)
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState({ title: '', body: '', type: 'info', district: '' })
@@ -489,8 +495,9 @@ export default function ExecutivePage() {
   const summaryApi = useApi<KPISummary>(() => analyticsApi.summary())
   const alertsCount = useApi<GovAlert[]>(() => alertsApi.list())
 
-  const kpi = summaryApi.data ?? { total: 0, resolved: 0, open: 0, sla_breaches: 0 }
-  const notifCount = toArr<GovAlert>(alertsCount.data).length
+  const kpi = summaryApi.data ?? MOCK_KPI
+  const rawAlerts = toArr<GovAlert>(alertsCount.data)
+  const notifCount = rawAlerts.length || MOCK_ALERTS.length
 
   const storedUser = localStorage.getItem('apexcore_user')
   const currentUser = storedUser ? JSON.parse(storedUser) : null
