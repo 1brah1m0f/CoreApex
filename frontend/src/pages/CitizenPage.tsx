@@ -337,10 +337,10 @@ export default function CitizenPage() {
             const active = tab === t.key
             return (
               <button key={t.key} onClick={() => setTab(t.key)}
-                className={`flex-1 flex items-center justify-center gap-2 py-3.5 text-sm font-medium transition-all border-b-2
+                className={`flex-1 flex items-center justify-center gap-1.5 py-3.5 text-sm font-medium transition-all border-b-2 min-h-[48px]
                   ${active ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
-                <Icon size={16} />
-                {t.label}
+                <Icon size={17} />
+                <span className="hidden sm:inline">{t.label}</span>
                 {t.count !== null && (
                   <span className={`rounded-full text-xs px-1.5 py-0.5 font-bold
                     ${active ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500'}`}>

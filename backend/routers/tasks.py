@@ -24,11 +24,22 @@ async def get_my_tasks(supabase: AClient = Depends(get_async_supabase), user_id:
     try:
         # User istəyir ki, bütün vətəndaş müraciətləri avtomatik olaraq Müfəttişin "Tapşırıqlar" panelinə düşsün.
         # Buna görə də "tasks" cədvəli əvəzinə birbaşa "reports" cədvəlini çəkib task kimi formatlayırıq.
-        res = await supabase.table("reports").select("*").order("created_at", desc=True).execute()
+        res = await supabase.table("reports").select(
+            "id,title,description,category,address,status,created_at,lat,lng,assigned_agency"
+        ).order("created_at", desc=True).execute()
         reports = res.data or []
 
         tasks_list = []
         for rep in reports:
+            raw_lat = rep.get("lat")
+            raw_lng = rep.get("lng")
+            try:
+                map_x = float(raw_lat) if raw_lat is not None and float(raw_lat) != 0.0 else None
+                map_y = float(raw_lng) if raw_lng is not None and float(raw_lng) != 0.0 else None
+            except (TypeError, ValueError):
+                map_x = None
+                map_y = None
+
             tasks_list.append({
                 "id": rep.get("id"),
                 "status": rep.get("status") if rep.get("status") in ["pending", "inprogress", "resolved", "overdue"] else "pending",
@@ -39,7 +50,9 @@ async def get_my_tasks(supabase: AClient = Depends(get_async_supabase), user_id:
                 "description": rep.get("description") or "",
                 "date": rep.get("created_at")[:10] if rep.get("created_at") else "",
                 "report_id": rep.get("id"),
-                "agency_requirements": []
+                "agency_requirements": [],
+                "map_x": map_x,
+                "map_y": map_y,
             })
         return tasks_list
     except Exception as e:

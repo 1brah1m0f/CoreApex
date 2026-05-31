@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { LucideIcon, LogOut } from 'lucide-react'
+import logo from '../loqo.jpeg'
 
 interface NavItem {
   to: string
@@ -19,11 +20,9 @@ export default function Sidebar({ role, items }: SidebarProps) {
     <aside className="w-64 min-h-screen bg-primary flex flex-col">
       <div className="px-5 py-5 border-b border-white/10">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
-            <span className="text-white font-bold text-xs">NS</span>
-          </div>
+          <img src={logo} alt="Mobil İcra" className="w-9 h-9 rounded-full object-cover flex-shrink-0 border-2 border-white/30" />
           <div>
-            <p className="font-heading font-bold text-white text-sm leading-tight">Nərimanov SmartOps</p>
+            <p className="font-heading font-bold text-white text-sm leading-tight">Mobil İcra</p>
             <span className="text-white/60 text-xs capitalize">{role}</span>
           </div>
         </div>

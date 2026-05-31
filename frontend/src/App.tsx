@@ -8,6 +8,7 @@ import CitizenPage from './pages/CitizenPage'
 import NewReport from './pages/citizen/NewReport'
 import InspectorPage from './pages/inspector/InspectorPage'
 import ExecutivePage from './pages/executive/ExecutivePage'
+import InstallBanner from './components/InstallBanner'
 
 const MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
 
@@ -36,6 +37,7 @@ export default function App() {
     <APIProvider apiKey={MAPS_API_KEY}>
       <RouterProvider router={router} />
       <Toaster position="top-right" richColors />
+      <InstallBanner />
     </APIProvider>
   )
 }

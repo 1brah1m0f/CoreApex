@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { User, HardHat, Briefcase } from 'lucide-react'
+import logo from '../loqo.jpeg'
 
 const roles = [
   {
@@ -46,9 +47,12 @@ export default function Landing() {
               <div className="inline-flex items-center gap-2 rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-primary border border-blue-100">
                 Nərimanov Rayonu · Baku
               </div>
-              <h1 className="font-heading text-4xl md:text-5xl font-bold text-primary mt-4 leading-tight">
-                Nərimanov SmartOps
-              </h1>
+              <div className="flex items-center gap-4 mt-4">
+                <img src={logo} alt="Mobil İcra" className="w-14 h-14 rounded-2xl object-cover border border-blue-100 shadow-md" />
+                <h1 className="font-heading text-4xl md:text-5xl font-bold text-primary leading-tight">
+                  Mobil İcra
+                </h1>
+              </div>
               <p className="text-gray-600 text-base md:text-lg mt-3 leading-relaxed">
                 Müraciət, tapşırıq, analitika və xəbərdarlıq axınlarını birləşdirən vahid idarəetmə mühiti.
                 Şəhər xidmətləri real vaxt rejimində koordinasiya olunur.
@@ -57,13 +61,13 @@ export default function Landing() {
               <div className="mt-5 flex flex-wrap gap-3">
                 <button
                   onClick={() => navigate('/auth?role=citizen')}
-                  className="rounded-xl bg-primary px-5 py-2.5 text-white text-sm font-semibold shadow-lg shadow-blue-200 hover:bg-blue-700"
+                  className="w-full sm:w-auto rounded-xl bg-primary px-5 py-3 text-white text-sm font-semibold shadow-lg shadow-blue-200 hover:bg-blue-700 min-h-[44px]"
                 >
                   Vətəndaş portalına daxil ol
                 </button>
                 <button
                   onClick={() => navigate('/auth?role=executive')}
-                  className="rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-primary border border-blue-100 hover:bg-blue-50"
+                  className="w-full sm:w-auto rounded-xl bg-white px-5 py-3 text-sm font-semibold text-primary border border-blue-100 hover:bg-blue-50 min-h-[44px]"
                 >
                   İcraçı paneli
                 </button>
@@ -106,9 +110,7 @@ export default function Landing() {
                   <h2 className="font-heading text-2xl font-bold text-gray-900">Portal seçin</h2>
                   <p className="text-sm text-gray-500 mt-1">Rolunuza uyğun panelə keçid edin</p>
                 </div>
-                <div className="h-10 w-10 rounded-2xl bg-blue-50 flex items-center justify-center text-primary font-bold">
-                  NS
-                </div>
+                <img src={logo} alt="Mobil İcra" className="h-10 w-10 rounded-2xl object-cover border border-blue-100" />
               </div>
 
               <div className="mt-5 flex flex-col gap-3">

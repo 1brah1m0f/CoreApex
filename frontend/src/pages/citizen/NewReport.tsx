@@ -1,11 +1,12 @@
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ImagePlus, Loader2, Sparkles, X } from 'lucide-react'
+import { ImagePlus, Loader2, Sparkles, X, LocateFixed } from 'lucide-react'
 import { toast } from 'sonner'
 import { reportsApi } from '../../api'
 import Button from '../../components/ui/Button'
 import Input from '../../components/ui/Input'
 import Breadcrumb from '../../components/ui/Breadcrumb'
+import LocationPickerMap from '../../components/LocationPickerMap'
 
 const categories = ['Yollar', 'Su kəməri', 'Elektrik', 'Abadlıq', 'Zibil', 'Digər']
 
@@ -23,6 +24,7 @@ export default function NewReport() {
 
   const [form, setForm] = useState({
     title: '', description: '', category: '', photo_url: '',
+    lat: 0, lng: 0,
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [submitting, setSubmitting] = useState(false)
@@ -30,6 +32,8 @@ export default function NewReport() {
   const [preview, setPreview] = useState<string | null>(null)
   const [aiFields, setAiFields] = useState<Set<string>>(new Set())
   const [assignedAgency, setAssignedAgency] = useState<string | null>(null)
+  const [locating, setLocating] = useState(false)
+  const [locationCaptured, setLocationCaptured] = useState(false)
 
   function set(field: string, value: string) {
     setForm(f => ({ ...f, [field]: value }))
@@ -74,6 +78,35 @@ export default function NewReport() {
     } finally {
       setClassifying(false)
     }
+  }
+
+  function handleGps() {
+    if (!navigator.geolocation) {
+      toast.error('Brauzer GPS dəstəkləmir — xəritədən əl ilə seçin')
+      return
+    }
+    setLocating(true)
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        setForm(f => ({ ...f, lat: pos.coords.latitude, lng: pos.coords.longitude }))
+        setLocationCaptured(true)
+        setLocating(false)
+        if (pos.coords.accuracy > 300) {
+          toast.warning(`GPS dəqiq deyil (~${Math.round(pos.coords.accuracy)}m) — xəritədən düzəldin`)
+        } else {
+          toast.success('GPS alındı — xəritədən yoxlayın')
+        }
+      },
+      (err) => {
+        setLocating(false)
+        if (err.code === err.PERMISSION_DENIED) {
+          toast.error('GPS icazəsi verilmədi — xəritədən əl ilə seçin')
+        } else {
+          toast.error('GPS alınmadı — xəritədən əl ilə seçin')
+        }
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    )
   }
 
   function removePhoto() {
@@ -204,6 +237,35 @@ export default function NewReport() {
           {errors.description && <p className="text-xs text-danger">{errors.description}</p>}
         </div>
 
+
+        {/* Location */}
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleGps}
+              disabled={locating}
+              className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition-colors
+                ${locationCaptured
+                  ? 'border-green-400 bg-green-50 text-green-700'
+                  : 'border-border bg-white text-gray-700 hover:border-primary hover:text-primary'
+                } disabled:opacity-50 disabled:cursor-not-allowed`}
+            >
+              {locating ? <Loader2 size={15} className="animate-spin" /> : <LocateFixed size={15} />}
+              {locating ? 'GPS alınır...' : locationCaptured ? 'GPS alındı' : 'GPS ilə yer al'}
+            </button>
+          </div>
+          <LocationPickerMap
+            value={locationCaptured ? { lat: form.lat, lng: form.lng } : null}
+            onChange={pos => {
+              if (!pos) { setForm(f => ({ ...f, lat: 0, lng: 0 })); setLocationCaptured(false); return }
+              setForm(f => ({ ...f, lat: pos.lat, lng: pos.lng }))
+              setLocationCaptured(true)
+            }}
+            showLabel={false}
+            height={260}
+          />
+        </div>
 
         <div className="flex gap-3 justify-end pt-2">
           <Button type="button" variant="ghost" onClick={() => navigate('/citizen')}>

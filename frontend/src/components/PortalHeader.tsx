@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Bell, User, LogOut, Building2 } from 'lucide-react'
+import logo from '../loqo.jpeg'
 import { useNavigate } from 'react-router-dom'
 import Modal from './ui/Modal'
 import { GovAlert } from '../types'
@@ -37,11 +38,9 @@ export default function PortalHeader({
     <header className="bg-white border-b border-gray-100 px-4 py-3 sticky top-0 z-40">
       <div className="max-w-6xl mx-auto flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center flex-shrink-0">
-            <span className="text-white font-bold text-sm tracking-wide">NS</span>
-          </div>
+          <img src={logo} alt="Mobil İcra" className="w-10 h-10 rounded-full object-cover flex-shrink-0 border border-gray-200" />
           <div>
-            <p className="font-bold text-gray-900 text-[15px] leading-tight">Nərimanov SmartOps</p>
+            <p className="font-bold text-gray-900 text-[15px] leading-tight">Mobil İcra</p>
             <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${color}`}>{label}</span>
           </div>
         </div>
@@ -52,21 +51,21 @@ export default function PortalHeader({
               setNotifOpen(true)
               setHasUnread(false)
             }}
-            className="relative p-2 rounded-xl hover:bg-gray-50 transition-colors"
+            className="relative p-2.5 rounded-xl hover:bg-gray-50 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
             title="Bildirişlər"
           >
             <Bell size={20} className="text-gray-500" />
             {hasUnread && (
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white" />
+              <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white" />
             )}
           </button>
 
           <button
             onClick={() => setProfileOpen(true)}
-            className="flex items-center gap-2 pl-1 rounded-xl px-2 py-1 hover:bg-gray-50 transition-colors"
+            className="flex items-center gap-2 rounded-xl px-2.5 py-1.5 hover:bg-gray-50 transition-colors min-h-[44px]"
             title="Profil"
           >
-            <div className="w-8 h-8 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center flex-shrink-0">
               <UserIcon size={15} className="text-gray-500" />
             </div>
             <div className="hidden sm:flex flex-col leading-tight">
@@ -77,7 +76,7 @@ export default function PortalHeader({
 
           <button
             onClick={() => navigate('/')}
-            className="p-2 rounded-xl hover:bg-gray-50 transition-colors ml-1"
+            className="p-2.5 rounded-xl hover:bg-gray-50 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
             title="Çıxış"
           >
             <LogOut size={18} className="text-gray-400" />
@@ -97,7 +96,7 @@ export default function PortalHeader({
         <div className="grid grid-cols-2 gap-3 text-sm">
           <div className="bg-gray-50 rounded-xl p-3">
             <p className="text-xs text-gray-400 mb-1">Portal</p>
-            <p className="font-medium text-gray-800">Nərimanov SmartOps</p>
+            <p className="font-medium text-gray-800">Mobil İcra</p>
           </div>
           <div className="bg-gray-50 rounded-xl p-3">
             <p className="text-xs text-gray-400 mb-1">Bildirişlər</p>

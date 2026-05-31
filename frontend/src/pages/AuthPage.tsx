@@ -5,6 +5,7 @@ import { Eye, EyeOff } from 'lucide-react'
 import { authApi } from '../api'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
+import logo from '../loqo.jpeg'
 
 type AuthMode = 'login' | 'register'
 type UserRole = 'citizen' | 'inspector' | 'executive'
@@ -94,10 +95,8 @@ export default function AuthPage() {
       <div className="w-full max-w-md">
         {/* Logo / brand */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary text-white text-xl font-bold mb-3 shadow-lg shadow-blue-200">
-            NS
-          </div>
-          <h1 className="font-heading text-2xl font-bold text-gray-900">Nərimanov SmartOps</h1>
+          <img src={logo} alt="Mobil İcra" className="w-14 h-14 rounded-2xl object-cover mb-3 shadow-lg border border-blue-100 mx-auto" />
+          <h1 className="font-heading text-2xl font-bold text-gray-900">Mobil İcra</h1>
           <p className="text-sm text-gray-500 mt-1">Şəhər idarəetmə platforması</p>
         </div>
 

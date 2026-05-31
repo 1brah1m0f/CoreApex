@@ -1,151 +1,172 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Map, AdvancedMarker, InfoWindow } from '@vis.gl/react-google-maps'
-import { Zap, Droplets, Trash2, Construction, Leaf, MapPin } from 'lucide-react'
 import { Task } from '../types'
 
 const BAKU = { lat: 40.4093, lng: 49.8671 }
-const MAP_ID = import.meta.env.VITE_GOOGLE_MAPS_MAP_ID
+const MAP_ID = import.meta.env.VITE_GOOGLE_MAPS_MAP_ID as string
 
-const priorityStyle: Record<string, { bg: string; ring: string; label: string }> = {
-  high:   { bg: '#EF4444', ring: '#FCA5A5', label: 'Yüksək' },
-  medium: { bg: '#F59E0B', ring: '#FCD34D', label: 'Orta' },
-  low:    { bg: '#3B82F6', ring: '#93C5FD', label: 'Aşağı' },
+const PRIORITY_COLOR: Record<string, string> = {
+  high:   '#EF4444',
+  medium: '#F59E0B',
+  low:    '#3B82F6',
+  Yüksək: '#EF4444',
+  Orta:   '#F59E0B',
+  Aşağı:  '#3B82F6',
 }
 
-function categoryIcon(cat?: string) {
+const PRIORITY_LABEL: Record<string, string> = {
+  high:   'Yüksək',
+  medium: 'Orta',
+  low:    'Aşağı',
+  Yüksək: 'Yüksək',
+  Orta:   'Orta',
+  Aşağı:  'Aşağı',
+}
+
+function catEmoji(cat?: string): string {
   const c = (cat ?? '').toLowerCase()
-  if (c.includes('elektrik'))      return Zap
-  if (c.includes('su'))            return Droplets
-  if (c.includes('zibil'))         return Trash2
-  if (c.includes('yol'))           return Construction
-  if (c.includes('abadlıq') || c.includes('abadliq')) return Leaf
-  return MapPin
+  if (c.includes('elektrik')) return '⚡'
+  if (c.includes('su'))       return '💧'
+  if (c.includes('zibil'))   return '🗑'
+  if (c.includes('yol'))     return '🛣'
+  if (c.includes('abadl'))   return '🌿'
+  return '📍'
 }
 
-// ─── Main Map ──────────────────────────────────────
 interface TaskMapProps {
   tasks: Task[]
+  highlightId?: string | null
   onNavigateToTasks?: () => void
 }
 
-export default function TaskMap({ tasks, onNavigateToTasks }: TaskMapProps) {
+export default function TaskMap({ tasks, highlightId, onNavigateToTasks }: TaskMapProps) {
   const [selected, setSelected] = useState<Task | null>(null)
+  const prevHighlight = useRef<string | null>(null)
 
-  const activeTasks = tasks.filter(
-    t => t.status !== 'resolved' && t.map_x != null && t.map_y != null
-  )
+  const gpsTasks = tasks.filter(t => t.map_x != null && t.map_y != null)
+
+  useEffect(() => {
+    if (!highlightId || highlightId === prevHighlight.current) return
+    prevHighlight.current = highlightId
+    const t = gpsTasks.find(t => t.id === highlightId)
+    if (t) setSelected(t)
+  }, [highlightId]) // eslint-disable-line
 
   return (
-    <div className="rounded-2xl overflow-hidden border border-gray-200 shadow-sm relative" style={{ height: 400 }}>
-      <Map
-        mapId={MAP_ID}
-        defaultCenter={BAKU}
-        defaultZoom={14}
-        gestureHandling="cooperative"
-        mapTypeControl={false}
-        streetViewControl={false}
-        fullscreenControl={false}
-      >
-        {activeTasks.map((task, i) => {
-          const style = priorityStyle[task.priority] ?? priorityStyle.medium
-          const isSelected = selected?.id === task.id
-          const Icon = categoryIcon(task.category)
+    <div style={{ position: 'relative' }}>
+      <div style={{ height: 460, borderRadius: 16, overflow: 'hidden', border: '1px solid #e5e7eb' }}>
+        <Map
+          mapId={MAP_ID}
+          defaultCenter={BAKU}
+          defaultZoom={13}
+          gestureHandling="cooperative"
+          mapTypeControl={false}
+          streetViewControl={false}
+          fullscreenControl={false}
+        >
+          {gpsTasks.map(task => {
+            const bg    = PRIORITY_COLOR[task.priority] ?? '#3B82F6'
+            const isSel = selected?.id === task.id
 
-          return (
-            <AdvancedMarker
-              key={task.id}
-              position={{ lat: task.map_x!, lng: task.map_y! }}
-              onClick={() => setSelected(isSelected ? null : task)}
-              zIndex={isSelected ? 99 : i}
-            >
-              <div
-                style={{
-                  width: 40, height: 40,
-                  background: style.bg,
-                  boxShadow: isSelected
-                    ? `0 0 0 3px white, 0 0 0 6px ${style.bg}`
-                    : `0 2px 8px rgba(0,0,0,0.3)`,
-                  transform: isSelected ? 'scale(1.2)' : 'scale(1)',
-                  transition: 'all 0.15s ease',
+            return (
+              <AdvancedMarker
+                key={task.id}
+                position={{ lat: task.map_x!, lng: task.map_y! }}
+                zIndex={isSel ? 99 : 1}
+                onClick={() => setSelected(isSel ? null : task)}
+              >
+                {/* Simple div marker — guaranteed to render in all browsers */}
+                <div style={{
+                  width:  isSel ? 52 : 44,
+                  height: isSel ? 52 : 44,
                   borderRadius: '50%',
+                  background: bg,
+                  border: `3px solid ${isSel ? '#fff' : bg}`,
+                  boxShadow: isSel
+                    ? `0 0 0 4px ${bg}55, 0 4px 16px rgba(0,0,0,0.3)`
+                    : '0 3px 10px rgba(0,0,0,0.3)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: 'white',
+                  fontSize: isSel ? 22 : 18,
                   cursor: 'pointer',
-                  border: '2.5px solid white',
-                }}
-              >
-                <Icon size={18} strokeWidth={2.5} />
-              </div>
-            </AdvancedMarker>
-          )
-        })}
-
-        {selected && selected.map_x != null && selected.map_y != null && (
-          <InfoWindow
-            position={{ lat: selected.map_x, lng: selected.map_y }}
-            onClose={() => setSelected(null)}
-          >
-            <div style={{ padding: '6px 4px', maxWidth: 230, fontFamily: 'inherit' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-                <span style={{
-                  background: priorityStyle[selected.priority]?.bg ?? '#3b82f6',
-                  color: 'white', borderRadius: 20, padding: '1px 8px', fontSize: 11, fontWeight: 600,
+                  transition: 'all 0.15s ease',
+                  userSelect: 'none',
                 }}>
-                  {priorityStyle[selected.priority]?.label}
-                </span>
-                {selected.category && (
-                  <span style={{ fontSize: 11, color: '#6b7280', background: '#f3f4f6', borderRadius: 20, padding: '1px 7px' }}>
-                    {selected.category}
+                  {catEmoji(task.category)}
+                </div>
+              </AdvancedMarker>
+            )
+          })}
+
+          {selected && selected.map_x != null && selected.map_y != null && (
+            <InfoWindow
+              position={{ lat: selected.map_x, lng: selected.map_y }}
+              onClose={() => setSelected(null)}
+            >
+              <div style={{ maxWidth: 240, fontFamily: 'sans-serif', padding: '4px 2px' }}>
+                <div style={{ display: 'flex', gap: 6, marginBottom: 8, flexWrap: 'wrap' }}>
+                  <span style={{
+                    background: PRIORITY_COLOR[selected.priority] ?? '#3b82f6',
+                    color: '#fff', borderRadius: 20, padding: '2px 9px',
+                    fontSize: 11, fontWeight: 700,
+                  }}>
+                    {PRIORITY_LABEL[selected.priority] ?? selected.priority}
                   </span>
+                  {selected.category && (
+                    <span style={{
+                      fontSize: 11, color: '#374151',
+                      background: '#f3f4f6', borderRadius: 20, padding: '2px 8px',
+                    }}>
+                      {catEmoji(selected.category)} {selected.category}
+                    </span>
+                  )}
+                </div>
+                <p style={{ fontWeight: 700, fontSize: 14, margin: '0 0 5px', color: '#111' }}>
+                  {selected.title}
+                </p>
+                {selected.address && (
+                  <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 4px' }}>
+                    📍 {selected.address}
+                  </p>
+                )}
+                {selected.description && (
+                  <p style={{ fontSize: 11, color: '#9ca3af', margin: 0, lineHeight: 1.45 }}>
+                    {selected.description}
+                  </p>
+                )}
+                {onNavigateToTasks && (
+                  <button
+                    onClick={() => { setSelected(null); onNavigateToTasks() }}
+                    style={{
+                      marginTop: 10, width: '100%', padding: '7px 0',
+                      background: '#2563EB', color: '#fff',
+                      border: 'none', borderRadius: 8,
+                      fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                    }}
+                  >
+                    → Tapşırıqlar siyahısına
+                  </button>
                 )}
               </div>
-              <p style={{ fontWeight: 700, fontSize: 13, margin: '0 0 4px', color: '#111' }}>{selected.title}</p>
-              <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 3px' }}>
-                📍 {selected.address}
-              </p>
-              {selected.agency_body && (
-                <p style={{ fontSize: 11, color: '#7c3aed', margin: 0 }}>
-                  🏢 {selected.agency_body}
-                </p>
-              )}
-              {selected.description && (
-                <p style={{ fontSize: 11, color: '#9ca3af', marginTop: 4, lineHeight: 1.4 }}>
-                  {selected.description}
-                </p>
-              )}
-              {onNavigateToTasks && (
-                <button
-                  onClick={() => { setSelected(null); onNavigateToTasks() }}
-                  style={{
-                    marginTop: 10, width: '100%', padding: '6px 0',
-                    background: '#2563EB', color: 'white', border: 'none',
-                    borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                  }}
-                >
-                  → Tapşırıqlar Panelinə keç
-                </button>
-              )}
-            </div>
-          </InfoWindow>
-        )}
-      </Map>
-
-      {/* Legend */}
-      <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-sm rounded-xl px-3 py-2.5 shadow-md border border-gray-200 flex flex-col gap-1.5">
-        {Object.entries(priorityStyle).map(([key, s]) => (
-          <div key={key} className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: s.bg }} />
-            <span className="text-xs text-gray-600">{s.label} prioritet</span>
-          </div>
-        ))}
+            </InfoWindow>
+          )}
+        </Map>
       </div>
 
-      {/* Task count badge */}
-      <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm rounded-xl px-3 py-2 shadow-md border border-gray-200">
-        <p className="text-xs font-semibold text-gray-700">{activeTasks.length} aktiv tapşırıq</p>
-        <p className="text-xs text-gray-400">Günün marşrutu</p>
+      {/* GPS count badge */}
+      <div style={{
+        position: 'absolute', top: 12, right: 12,
+        background: 'rgba(255,255,255,0.96)',
+        borderRadius: 12, padding: '8px 12px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+        border: '1px solid #e5e7eb',
+        pointerEvents: 'none',
+      }}>
+        <p style={{ fontSize: 12, fontWeight: 700, color: '#111827', margin: 0 }}>
+          {gpsTasks.length} GPS müraciət
+        </p>
+        <p style={{ fontSize: 11, color: '#9ca3af', margin: 0 }}>xəritədə görünür</p>
       </div>
     </div>
   )

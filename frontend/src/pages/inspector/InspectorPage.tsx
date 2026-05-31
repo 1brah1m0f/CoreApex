@@ -35,7 +35,11 @@ const priorityDot = { high: 'bg-red-500', medium: 'bg-amber-400', low: 'bg-green
 
 
 // ─── Tasks Tab ─────────────────────────────────────
-function TasksTab({ tasks, refetch }: { tasks: Task[]; refetch: () => void }) {
+function TasksTab({ tasks, refetch, onShowOnMap }: {
+  tasks: Task[]
+  refetch: () => void
+  onShowOnMap: (taskId: string) => void
+}) {
   const [expanded, setExpanded] = useState<string | null>(null)
   const [updating, setUpdating] = useState<string | null>(null)
   const [uploading, setUploading] = useState<string | null>(null)
@@ -63,81 +67,100 @@ function TasksTab({ tasks, refetch }: { tasks: Task[]; refetch: () => void }) {
 
   return (
     <div className="flex flex-col gap-3">
-      {tasks.map(task => (
-        <div key={task.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <button onClick={() => setExpanded(e => e === task.id ? null : task.id)}
-            className="w-full flex items-center justify-between px-4 py-4 text-left">
-            <div className="flex items-center gap-3 min-w-0">
-              <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${priorityDot[task.priority]}`} />
-              <div className="min-w-0">
-                <p className="font-semibold text-gray-900 text-[15px] truncate">{task.title}</p>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <span className="flex items-center gap-1 text-xs text-gray-400">
-                    <MapPin size={11} /> {task.address}
-                  </span>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-              <StatusBadge status={task.status} />
-              {expanded === task.id ? <ChevronUp size={16} className="text-gray-400" /> : <ChevronDown size={16} className="text-gray-400" />}
-            </div>
-          </button>
-
-          {expanded === task.id && (
-            <div className="px-4 pb-4 border-t border-gray-100 pt-3 flex flex-col gap-3">
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div className="bg-gray-50 rounded-xl p-2.5">
-                  <p className="text-xs text-gray-400 mb-0.5">Kateqoriya</p>
-                  <p className="font-medium text-gray-800">{task.category}</p>
-                </div>
-                <div className="bg-gray-50 rounded-xl p-2.5">
-                  <p className="text-xs text-gray-400 mb-0.5">Tarix</p>
-                  <p className="font-medium text-gray-800">{task.date}</p>
-                </div>
-                {task.agency_body && (
-                  <div className="bg-gray-50 rounded-xl p-2.5 col-span-2">
-                    <p className="text-xs text-gray-400 mb-0.5">Qurum</p>
-                    <p className="font-medium text-gray-800">{task.agency_body}</p>
+      {tasks.map(task => {
+        const hasGps = task.map_x != null && task.map_y != null
+        return (
+          <div key={task.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <button onClick={() => setExpanded(e => e === task.id ? null : task.id)}
+              className="w-full flex items-center justify-between px-4 py-4 text-left">
+              <div className="flex items-center gap-3 min-w-0">
+                <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${priorityDot[task.priority]}`} />
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold text-gray-900 text-[15px] truncate">{task.title}</p>
+                    {hasGps && (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-full px-2 py-0.5 flex-shrink-0">
+                        <MapPin size={9} /> GPS
+                      </span>
+                    )}
                   </div>
-                )}
-              </div>
-
-              {task.description && <p className="text-sm text-gray-500">{task.description}</p>}
-
-              {task.agency_requirements && task.agency_requirements.length > 0 && (
-                <div>
-                  <p className="text-xs font-semibold text-gray-600 mb-1.5">Tələblər</p>
-                  <div className="flex flex-col gap-1">
-                    {task.agency_requirements.map((r, i) => (
-                      <div key={i} className="flex items-center gap-2 text-sm text-gray-600">
-                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500 flex-shrink-0" />
-                        {r}
-                      </div>
-                    ))}
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className="flex items-center gap-1 text-xs text-gray-400">
+                      <MapPin size={11} /> {task.address}
+                    </span>
                   </div>
                 </div>
-              )}
-
-              <div className="flex gap-2 pt-1">
-                {nextStatus[task.status] && (
-                  <Button size="sm" onClick={() => updateStatus(task)} loading={updating === task.id} className="flex-1">
-                    {task.status === 'pending' ? '▶ Başla' : '✓ Tamamla'}
-                  </Button>
-                )}
-                <label className={`flex-1 flex items-center justify-center gap-1.5 rounded-xl px-3 py-1.5 text-sm font-medium
-                  border border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 cursor-pointer transition-colors
-                  ${uploading === task.id ? 'opacity-60 pointer-events-none' : ''}`}>
-                  <Upload size={14} />
-                  {uploading === task.id ? 'Yüklənir...' : 'Sübut yüklə'}
-                  <input type="file" className="hidden"
-                    onChange={e => { const f = e.target.files?.[0]; if (f) uploadProof(task, f) }} />
-                </label>
               </div>
-            </div>
-          )}
-        </div>
-      ))}
+              <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                <StatusBadge status={task.status} />
+                {expanded === task.id ? <ChevronUp size={16} className="text-gray-400" /> : <ChevronDown size={16} className="text-gray-400" />}
+              </div>
+            </button>
+
+            {expanded === task.id && (
+              <div className="px-4 pb-4 border-t border-gray-100 pt-3 flex flex-col gap-3">
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div className="bg-gray-50 rounded-xl p-2.5">
+                    <p className="text-xs text-gray-400 mb-0.5">Kateqoriya</p>
+                    <p className="font-medium text-gray-800">{task.category}</p>
+                  </div>
+                  <div className="bg-gray-50 rounded-xl p-2.5">
+                    <p className="text-xs text-gray-400 mb-0.5">Tarix</p>
+                    <p className="font-medium text-gray-800">{task.date}</p>
+                  </div>
+                  {task.agency_body && (
+                    <div className="bg-gray-50 rounded-xl p-2.5 col-span-2">
+                      <p className="text-xs text-gray-400 mb-0.5">Qurum</p>
+                      <p className="font-medium text-gray-800">{task.agency_body}</p>
+                    </div>
+                  )}
+                </div>
+
+                {task.description && <p className="text-sm text-gray-500">{task.description}</p>}
+
+                {task.agency_requirements && task.agency_requirements.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-gray-600 mb-1.5">Tələblər</p>
+                    <div className="flex flex-col gap-1">
+                      {task.agency_requirements.map((r, i) => (
+                        <div key={i} className="flex items-center gap-2 text-sm text-gray-600">
+                          <div className="w-1.5 h-1.5 rounded-full bg-blue-500 flex-shrink-0" />
+                          {r}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex gap-2 pt-1 flex-wrap">
+                  {nextStatus[task.status] && (
+                    <Button size="sm" onClick={() => updateStatus(task)} loading={updating === task.id} className="flex-1 min-h-[40px]">
+                      {task.status === 'pending' ? '▶ Başla' : '✓ Tamamla'}
+                    </Button>
+                  )}
+                  {hasGps && (
+                    <button
+                      onClick={() => onShowOnMap(task.id)}
+                      className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium min-h-[40px]
+                        border border-blue-300 text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors"
+                    >
+                      <MapPin size={13} /> Xəritədə göstər
+                    </button>
+                  )}
+                  <label className={`flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium min-h-[40px]
+                    border border-gray-200 text-gray-600 bg-white hover:bg-gray-50 cursor-pointer transition-colors
+                    ${uploading === task.id ? 'opacity-60 pointer-events-none' : ''}`}>
+                    <Upload size={14} />
+                    {uploading === task.id ? 'Yüklənir...' : 'Sübut yüklə'}
+                    <input type="file" className="hidden"
+                      onChange={e => { const f = e.target.files?.[0]; if (f) uploadProof(task, f) }} />
+                  </label>
+                </div>
+              </div>
+            )}
+          </div>
+        )
+      })}
     </div>
   )
 }
@@ -251,10 +274,16 @@ function SimulationTab() {
 // ─── Main Page ─────────────────────────────────────
 export default function InspectorPage() {
   const [tab, setTab] = useState<Tab>('route')
+  const [highlightId, setHighlightId] = useState<string | null>(null)
   const { data, loading, refetch } = useApi<Task[]>(() => tasksApi.mine())
   const proposalsFetch = useApi<Proposal[]>(() => proposalsApi.list())
   const tasks = toArr<Task>(data)
   const proposals = toArr<Proposal>(proposalsFetch.data)
+
+  function showOnMap(taskId: string) {
+    setHighlightId(taskId)
+    setTab('route')
+  }
 
   const activeTasks = tasks.filter(t => t.status !== 'resolved')
   const todayTasks = activeTasks.slice(0, 4)
@@ -282,10 +311,10 @@ export default function InspectorPage() {
             const active = tab === t.key
             return (
               <button key={t.key} onClick={() => setTab(t.key)}
-                className={`flex-1 min-w-[120px] flex items-center justify-center gap-1.5 py-3.5 text-sm font-medium transition-all border-b-2 whitespace-nowrap
+                className={`flex-1 min-w-[52px] sm:min-w-[110px] flex items-center justify-center gap-1.5 py-3.5 text-sm font-medium transition-all border-b-2 whitespace-nowrap min-h-[48px]
                   ${active ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
-                <Icon size={15} />
-                {t.label}
+                <Icon size={17} />
+                <span className="hidden sm:inline">{t.label}</span>
               </button>
             )
           })}
@@ -297,7 +326,11 @@ export default function InspectorPage() {
         {/* ── Route Tab ── */}
         {tab === 'route' && (
           <div className="flex flex-col gap-4">
-            <TaskMap tasks={tasks} onNavigateToTasks={() => setTab('tasks')} />
+            {loading ? (
+              <div className="flex justify-center py-16"><Spinner size="lg" /></div>
+            ) : (
+              <TaskMap tasks={tasks} highlightId={highlightId} onNavigateToTasks={() => setTab('tasks')} />
+            )}
 
             <div>
               <h2 className="font-bold text-gray-900 mb-3">Bugünkü tapşırıqlar</h2>
@@ -328,7 +361,7 @@ export default function InspectorPage() {
             {loading ? (
               <div className="flex justify-center py-16"><Spinner size="lg" /></div>
             ) : (
-              <TasksTab tasks={tasks} refetch={refetch} />
+              <TasksTab tasks={tasks} refetch={refetch} onShowOnMap={showOnMap} />
             )}
           </div>
         )}
