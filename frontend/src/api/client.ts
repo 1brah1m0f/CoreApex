@@ -1,7 +1,11 @@
 import axios from 'axios'
 
+// Dev-də Vite proxy işləyir (/api/v1 → localhost:8000).
+// Production-da VITE_API_URL=https://coreapex.onrender.com təyin edin.
+const baseURL = import.meta.env.VITE_API_URL ?? '/api/v1'
+
 const client = axios.create({
-  baseURL: '/api/v1',
+  baseURL,
   headers: { 'Content-Type': 'application/json' },
 })
 
