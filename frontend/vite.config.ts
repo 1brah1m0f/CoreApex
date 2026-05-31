@@ -79,7 +79,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api/v1': {
-        target: 'http://localhost:8000',
+        target: 'https://coreapex.onrender.com/',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/v1/, ''),
       },

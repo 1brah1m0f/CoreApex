@@ -1,4 +1,5 @@
-import { Map, AdvancedMarker, MapMouseEvent } from '@vis.gl/react-google-maps'
+import { useEffect } from 'react'
+import { Map, AdvancedMarker, MapMouseEvent, useMap } from '@vis.gl/react-google-maps'
 import { MapPin } from 'lucide-react'
 
 const BAKU = { lat: 40.4093, lng: 49.8671 }
@@ -11,6 +12,16 @@ interface Props {
   onChange: (pos: Pos) => void
   showLabel?: boolean
   height?: number
+}
+
+// GPS-dən gələn koordinat dəyişdikdə xəritəni oraya pan edir
+function PanToValue({ value }: { value: Pos | null }) {
+  const map = useMap()
+  useEffect(() => {
+    if (!map || !value) return
+    map.panTo({ lat: value.lat, lng: value.lng })
+  }, [map, value?.lat, value?.lng])
+  return null
 }
 
 export default function LocationPickerMap({ value, onChange, showLabel = true, height = 200 }: Props) {
@@ -40,17 +51,16 @@ export default function LocationPickerMap({ value, onChange, showLabel = true, h
           fullscreenControl={false}
           style={{ cursor: 'crosshair' }}
         >
+          <PanToValue value={value} />
           {value && (
             <AdvancedMarker position={value}>
-              <div
-                style={{
-                  width: 16, height: 16,
-                  background: '#2563EB',
-                  borderRadius: '50%',
-                  border: '3px solid white',
-                  boxShadow: '0 2px 8px rgba(37,99,235,0.5)',
-                }}
-              />
+              <div style={{
+                width: 16, height: 16,
+                background: '#2563EB',
+                borderRadius: '50%',
+                border: '3px solid white',
+                boxShadow: '0 2px 8px rgba(37,99,235,0.5)',
+              }} />
             </AdvancedMarker>
           )}
         </Map>

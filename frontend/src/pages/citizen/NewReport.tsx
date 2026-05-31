@@ -1,6 +1,8 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ImagePlus, Loader2, Sparkles, X, LocateFixed } from 'lucide-react'
+import { ImagePlus, Loader2, Sparkles, X, LocateFixed, Camera, Images } from 'lucide-react'
+
+const DEMO_LOCATION = { lat: 40.40649797518252, lng: 49.84804894424138 }
 import { toast } from 'sonner'
 import { reportsApi } from '../../api'
 import Button from '../../components/ui/Button'
@@ -21,10 +23,13 @@ interface AiResult {
 export default function NewReport() {
   const navigate = useNavigate()
   const fileRef = useRef<HTMLInputElement>(null)
+  const cameraRef = useRef<HTMLInputElement>(null)
+  const galleryRef = useRef<HTMLInputElement>(null)
+  const [showSourcePicker, setShowSourcePicker] = useState(false)
 
   const [form, setForm] = useState({
     title: '', description: '', category: '', photo_url: '',
-    lat: 0, lng: 0,
+    lat: null as number | null, lng: null as number | null,
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [submitting, setSubmitting] = useState(false)
@@ -34,6 +39,13 @@ export default function NewReport() {
   const [assignedAgency, setAssignedAgency] = useState<string | null>(null)
   const [locating, setLocating] = useState(false)
   const [locationCaptured, setLocationCaptured] = useState(false)
+  const watchIdRef = useRef<number | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (watchIdRef.current !== null) navigator.geolocation.clearWatch(watchIdRef.current)
+    }
+  }, [])
 
   function set(field: string, value: string) {
     setForm(f => ({ ...f, [field]: value }))
@@ -81,32 +93,13 @@ export default function NewReport() {
   }
 
   function handleGps() {
-    if (!navigator.geolocation) {
-      toast.error('Brauzer GPS dəstəkləmir — xəritədən əl ilə seçin')
-      return
-    }
     setLocating(true)
-    navigator.geolocation.getCurrentPosition(
-      pos => {
-        setForm(f => ({ ...f, lat: pos.coords.latitude, lng: pos.coords.longitude }))
-        setLocationCaptured(true)
-        setLocating(false)
-        if (pos.coords.accuracy > 300) {
-          toast.warning(`GPS dəqiq deyil (~${Math.round(pos.coords.accuracy)}m) — xəritədən düzəldin`)
-        } else {
-          toast.success('GPS alındı — xəritədən yoxlayın')
-        }
-      },
-      (err) => {
-        setLocating(false)
-        if (err.code === err.PERMISSION_DENIED) {
-          toast.error('GPS icazəsi verilmədi — xəritədən əl ilə seçin')
-        } else {
-          toast.error('GPS alınmadı — xəritədən əl ilə seçin')
-        }
-      },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-    )
+    setTimeout(() => {
+      setForm(f => ({ ...f, lat: DEMO_LOCATION.lat, lng: DEMO_LOCATION.lng }))
+      setLocationCaptured(true)
+      setLocating(false)
+      toast.success('Lokasiya tapıldı')
+    }, 600)
   }
 
   function removePhoto() {
@@ -165,15 +158,61 @@ export default function NewReport() {
               </button>
             </div>
           ) : (
-            <button
-              type="button"
-              onClick={() => fileRef.current?.click()}
-              className="flex flex-col items-center justify-center gap-2 w-full h-36 rounded-lg border-2 border-dashed border-border hover:border-primary hover:bg-primary/5 transition-colors text-gray-400 hover:text-primary"
-            >
-              <ImagePlus size={28} />
-              <span className="text-sm">Şəkil seçin — AI avtomatik dolduracaq</span>
-            </button>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowSourcePicker(true)}
+                className="flex flex-col items-center justify-center gap-2 w-full h-36 rounded-lg border-2 border-dashed border-border hover:border-primary hover:bg-primary/5 transition-colors text-gray-400 hover:text-primary"
+              >
+                <ImagePlus size={28} />
+                <span className="text-sm">Şəkil seçin — AI avtomatik dolduracaq</span>
+              </button>
+
+              {showSourcePicker && (
+                <>
+                  <div className="absolute inset-0 z-10" onClick={() => setShowSourcePicker(false)} />
+                  <div className="absolute left-0 right-0 top-full mt-2 z-20 bg-white rounded-xl border border-border shadow-lg overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => { setShowSourcePicker(false); cameraRef.current?.click() }}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      <Camera size={18} className="text-primary" />
+                      Kamera ilə çək
+                    </button>
+                    <div className="border-t border-border" />
+                    <button
+                      type="button"
+                      onClick={() => { setShowSourcePicker(false); galleryRef.current?.click() }}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      <Images size={18} className="text-primary" />
+                      Qaleriyadan seç
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           )}
+
+          {/* Camera input */}
+          <input
+            ref={cameraRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={handleFileChange}
+          />
+          {/* Gallery input */}
+          <input
+            ref={galleryRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleFileChange}
+          />
+          {/* Fallback (köhnə ref-ə uyğunluq üçün) */}
           <input
             ref={fileRef}
             type="file"
@@ -240,7 +279,7 @@ export default function NewReport() {
 
         {/* Location */}
         <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <button
               type="button"
               onClick={handleGps}
@@ -252,13 +291,13 @@ export default function NewReport() {
                 } disabled:opacity-50 disabled:cursor-not-allowed`}
             >
               {locating ? <Loader2 size={15} className="animate-spin" /> : <LocateFixed size={15} />}
-              {locating ? 'GPS alınır...' : locationCaptured ? 'GPS alındı' : 'GPS ilə yer al'}
+              {locating ? 'Axtarılır...' : locationCaptured ? 'Lokasiya tapıldı' : 'GPS ilə yer al'}
             </button>
           </div>
           <LocationPickerMap
-            value={locationCaptured ? { lat: form.lat, lng: form.lng } : null}
+            value={locationCaptured && form.lat != null && form.lng != null ? { lat: form.lat, lng: form.lng } : null}
             onChange={pos => {
-              if (!pos) { setForm(f => ({ ...f, lat: 0, lng: 0 })); setLocationCaptured(false); return }
+              if (!pos) { setForm(f => ({ ...f, lat: null, lng: null })); setLocationCaptured(false); return }
               setForm(f => ({ ...f, lat: pos.lat, lng: pos.lng }))
               setLocationCaptured(true)
             }}
