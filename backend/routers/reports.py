@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, Header
+from typing import Optional
 from supabase import Client
 
 from core.dependencies import get_supabase
@@ -9,6 +10,18 @@ from services.security import fetch_image, verify_image_authenticity
 from services.groq_classifier import classify_and_route_image_llama
 
 router = APIRouter(prefix="/reports", tags=["Reports"])
+
+def get_current_user_id(authorization: Optional[str] = Header(None), supabase: Client = Depends(get_supabase)) -> str:
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Token tələb olunur")
+    token = authorization.split(" ", 1)[1]
+    try:
+        resp = supabase.auth.get_user(token)
+        if not resp.user:
+            raise HTTPException(status_code=401, detail="Etibarsız token")
+        return resp.user.id
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=str(e))
 
 CATEGORY_AGENCY = {
     "Yollar": "AAYDA",
@@ -80,9 +93,12 @@ async def ai_classify_report(request: AIClassifyRequest):
 # ── CRUD endpoints ──────────────────────────────────────────────────────────
 
 @router.post("/")
-async def create_report(request: ReportCreateRequest, supabase: Client = Depends(get_supabase)):
+async def create_report(
+    request: ReportCreateRequest, 
+    supabase: Client = Depends(get_supabase),
+    user_id: str = Depends(get_current_user_id)
+):
     report_id = f"MR-{str(uuid.uuid4())[:8].upper()}"
-    user_id = "mock-uuid-1234"
 
     assigned_agency = request.assigned_agency or CATEGORY_AGENCY.get(request.category, "Təyin edilməyib")
 
@@ -116,8 +132,11 @@ async def create_report(request: ReportCreateRequest, supabase: Client = Depends
 
 
 @router.get("/mine")
-async def get_my_reports(status: str = None, supabase: Client = Depends(get_supabase)):
-    user_id = "mock-uuid-1234"
+async def get_my_reports(
+    status: str = None, 
+    supabase: Client = Depends(get_supabase),
+    user_id: str = Depends(get_current_user_id)
+):
     try:
         query = supabase.table("reports").select("*").eq("citizen_id", user_id).order("created_at", desc=True)
         if status:

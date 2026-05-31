@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Header
 from typing import Optional
-from supabase import Client
-from core.dependencies import get_supabase
+from supabase import AClient
+from core.dependencies import get_async_supabase
 from models.schemas import StaffLoginRequest, CitizenLoginRequest, TokenResponse, RegisterRequest
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
@@ -24,19 +24,21 @@ def _build_response(user, session) -> dict:
 # ── Register (citizen only) ─────────────────────────────────────────────────
 
 @router.post("/register", response_model=TokenResponse)
-async def register_user(request: RegisterRequest, supabase: Client = Depends(get_supabase)):
+async def register_user(request: RegisterRequest, supabase: AClient = Depends(get_async_supabase)):
     """
     Vətəndaş qeydiyyatı. Admin API ilə email avtomatik təsdiqlənir
     (SUPABASE_SERVICE_ROLE_KEY tələb olunur).
     """
+    VALID_ROLES = {"citizen", "inspector", "executive"}
+    role = request.role if request.role in VALID_ROLES else "citizen"
     try:
-        supabase.auth.admin.create_user({
+        await supabase.auth.admin.create_user({
             "email": request.email,
             "password": request.password,
             "email_confirm": True,
-            "user_metadata": {"full_name": request.name, "role": "citizen"},
+            "user_metadata": {"full_name": request.name, "role": role},
         })
-        sign_in = supabase.auth.sign_in_with_password({
+        sign_in = await supabase.auth.sign_in_with_password({
             "email": request.email,
             "password": request.password,
         })
@@ -49,13 +51,13 @@ async def register_user(request: RegisterRequest, supabase: Client = Depends(get
 # ── Unified login (all roles) ───────────────────────────────────────────────
 
 @router.post("/login", response_model=TokenResponse)
-async def login(request: CitizenLoginRequest, supabase: Client = Depends(get_supabase)):
+async def login(request: CitizenLoginRequest, supabase: AClient = Depends(get_async_supabase)):
     """
     Universal giriş — rol istifadəçi metadatasından oxunur.
     Vətəndaş, inspektor və icraçı hamısı bu endpoint-dən istifadə edir.
     """
     try:
-        res = supabase.auth.sign_in_with_password({
+        res = await supabase.auth.sign_in_with_password({
             "email": request.email,
             "password": request.password,
         })
@@ -68,9 +70,9 @@ async def login(request: CitizenLoginRequest, supabase: Client = Depends(get_sup
 # ── Legacy endpoints (backward compat) ─────────────────────────────────────
 
 @router.post("/login/citizen", response_model=TokenResponse)
-async def login_citizen(request: CitizenLoginRequest, supabase: Client = Depends(get_supabase)):
+async def login_citizen(request: CitizenLoginRequest, supabase: AClient = Depends(get_async_supabase)):
     try:
-        res = supabase.auth.sign_in_with_password({
+        res = await supabase.auth.sign_in_with_password({
             "email": request.email, "password": request.password})
         return _build_response(res.user, res.session)
     except Exception as e:
@@ -79,9 +81,9 @@ async def login_citizen(request: CitizenLoginRequest, supabase: Client = Depends
 
 
 @router.post("/login/staff", response_model=TokenResponse)
-async def login_staff(request: StaffLoginRequest, supabase: Client = Depends(get_supabase)):
+async def login_staff(request: StaffLoginRequest, supabase: AClient = Depends(get_async_supabase)):
     try:
-        res = supabase.auth.sign_in_with_password({
+        res = await supabase.auth.sign_in_with_password({
             "email": request.email, "password": request.password})
         return _build_response(res.user, res.session)
     except Exception as e:
@@ -94,14 +96,14 @@ async def login_staff(request: StaffLoginRequest, supabase: Client = Depends(get
 @router.get("/me")
 async def get_me(
     authorization: Optional[str] = Header(None),
-    supabase: Client = Depends(get_supabase),
+    supabase: AClient = Depends(get_async_supabase),
 ):
     """Token-dən cari istifadəçi məlumatlarını qaytarır."""
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Token tələb olunur")
     token = authorization.split(" ", 1)[1]
     try:
-        resp = supabase.auth.get_user(token)
+        resp = await supabase.auth.get_user(token)
         user = resp.user
         if not user:
             raise HTTPException(status_code=401, detail="Etibarsız token")

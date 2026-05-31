@@ -7,10 +7,11 @@ import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
 
 type AuthMode = 'login' | 'register'
+type UserRole = 'citizen' | 'inspector' | 'executive'
 
 interface LoginResponse {
   access_token: string
-  role: 'citizen' | 'inspector' | 'executive'
+  role: UserRole
   user: { id: string; full_name: string; email: string }
 }
 
@@ -20,10 +21,19 @@ const ROLE_PATHS: Record<string, string> = {
   executive: '/executive',
 }
 
+const ROLE_LABELS: Record<string, string> = {
+  citizen: 'Vətəndaş',
+  inspector: 'İnspektor',
+  executive: 'İcraçı',
+}
+
 export default function AuthPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const [mode, setMode] = useState<AuthMode>((searchParams.get('mode') as AuthMode) ?? 'login')
+
+  const selectedRole = (searchParams.get('role') ?? 'citizen') as UserRole
+  const roleLabel = ROLE_LABELS[selectedRole] ?? 'Vətəndaş'
 
   const [form, setForm] = useState({ name: '', email: '', password: '' })
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -54,7 +64,7 @@ export default function AuthPage() {
     try {
       let res: unknown
       if (mode === 'register') {
-        res = await authApi.register(form.name.trim(), form.email.trim(), form.password)
+        res = await authApi.register(form.name.trim(), form.email.trim(), form.password, selectedRole)
       } else {
         res = await authApi.login(form.email.trim(), form.password)
       }
@@ -92,6 +102,13 @@ export default function AuthPage() {
         </div>
 
         <div className="bg-white rounded-3xl border border-gray-100 shadow-card p-8">
+          {/* Role indicator */}
+          <div className="mb-5 flex items-center justify-center">
+            <span className="inline-flex items-center gap-2 rounded-full bg-blue-50 border border-blue-100 px-4 py-1.5 text-sm font-semibold text-blue-700">
+              {roleLabel} Portalı
+            </span>
+          </div>
+
           {/* Tab switcher */}
           <div className="flex rounded-xl bg-gray-100 p-1 mb-6">
             {(['login', 'register'] as AuthMode[]).map(m => (
@@ -163,11 +180,6 @@ export default function AuthPage() {
             </Button>
           </form>
 
-          {mode === 'login' && (
-            <p className="text-center text-xs text-gray-400 mt-3 bg-gray-50 rounded-lg py-2 px-3">
-              İşçi (inspektor / rəhbərlik) hesabları admin tərəfindən yaradılır
-            </p>
-          )}
           <p className="text-center text-sm text-gray-500 mt-4">
             {mode === 'login' ? 'Hesabınız yoxdur?' : 'Hesabınız var?'}{' '}
             <button

@@ -11,23 +11,23 @@ import ExecutivePage from './pages/executive/ExecutivePage'
 
 const MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
 
-function guard(role: string, element: React.ReactElement): React.ReactElement {
+function ProtectedRoute({ role, children }: { role: string; children: React.ReactElement }): React.ReactElement {
   const token = localStorage.getItem('apexcore_token')
   const storedRole = localStorage.getItem('apexcore_role')
   if (!token || token === 'undefined') return <Navigate to="/auth" replace />
   if (storedRole && storedRole !== role) return <Navigate to={`/${storedRole}`} replace />
-  return element
+  return children
 }
 
 const router = createBrowserRouter([
   { path: '/', element: <Landing /> },
   { path: '/auth', element: <AuthPage /> },
-  { path: '/citizen', element: guard('citizen', <CitizenPage />) },
-  { path: '/citizen/reports/new', element: guard('citizen', <NewReport />) },
-  { path: '/inspector', element: guard('inspector', <InspectorPage />) },
-  { path: '/inspector/*', element: guard('inspector', <InspectorPage />) },
-  { path: '/executive', element: guard('executive', <ExecutivePage />) },
-  { path: '/executive/*', element: guard('executive', <ExecutivePage />) },
+  { path: '/citizen', element: <ProtectedRoute role="citizen"><CitizenPage /></ProtectedRoute> },
+  { path: '/citizen/reports/new', element: <ProtectedRoute role="citizen"><NewReport /></ProtectedRoute> },
+  { path: '/inspector', element: <ProtectedRoute role="inspector"><InspectorPage /></ProtectedRoute> },
+  { path: '/inspector/*', element: <ProtectedRoute role="inspector"><InspectorPage /></ProtectedRoute> },
+  { path: '/executive', element: <ProtectedRoute role="executive"><ExecutivePage /></ProtectedRoute> },
+  { path: '/executive/*', element: <ProtectedRoute role="executive"><ExecutivePage /></ProtectedRoute> },
   { path: '*', element: <Navigate to="/" replace /> },
 ])
 

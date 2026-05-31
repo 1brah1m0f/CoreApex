@@ -5,9 +5,6 @@ import {
 import { useApi } from '../../hooks/useApi'
 import { analyticsApi } from '../../api'
 import { NeighborhoodStat, CategoryStat, MonthlyTrend, AgencyPerformance } from '../../types'
-import {
-  MOCK_NEIGHBORHOOD, MOCK_CATEGORY, MOCK_TREND, MOCK_AGENCY,
-} from '../../mocks'
 import Spinner from '../../components/ui/Spinner'
 import Breadcrumb from '../../components/ui/Breadcrumb'
 
@@ -21,10 +18,10 @@ export default function ExecutiveAnalytics() {
   const monthlyTrend = useApi<MonthlyTrend[]>(() => analyticsApi.monthlyTrend())
   const agencyPerf = useApi<AgencyPerformance[]>(() => analyticsApi.agencyPerformance())
 
-  const neighborhoods = toArr<NeighborhoodStat>(byNeighborhood.data).length > 0 ? toArr<NeighborhoodStat>(byNeighborhood.data) : MOCK_NEIGHBORHOOD
-  const categories = toArr<CategoryStat>(byCategory.data).length > 0 ? toArr<CategoryStat>(byCategory.data) : MOCK_CATEGORY
-  const trend = toArr<MonthlyTrend>(monthlyTrend.data).length > 0 ? toArr<MonthlyTrend>(monthlyTrend.data) : MOCK_TREND
-  const agencies = toArr<AgencyPerformance>(agencyPerf.data).length > 0 ? toArr<AgencyPerformance>(agencyPerf.data) : MOCK_AGENCY
+  const neighborhoods = toArr<NeighborhoodStat>(byNeighborhood.data)
+  const categories = toArr<CategoryStat>(byCategory.data)
+  const trend = toArr<MonthlyTrend>(monthlyTrend.data)
+  const agencies = toArr<AgencyPerformance>(agencyPerf.data)
 
   return (
     <div className="p-6 max-w-6xl mx-auto">

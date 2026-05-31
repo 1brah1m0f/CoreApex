@@ -22,7 +22,7 @@ export default function NewReport() {
   const fileRef = useRef<HTMLInputElement>(null)
 
   const [form, setForm] = useState({
-    title: '', description: '', address: '', neighborhood: '', category: '', photo_url: '',
+    title: '', description: '', category: '', photo_url: '',
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [submitting, setSubmitting] = useState(false)
@@ -42,7 +42,6 @@ export default function NewReport() {
     const e: Record<string, string> = {}
     if (!form.title.trim()) e.title = 'Başlıq tələb olunur'
     if (!form.description.trim()) e.description = 'Təsvir tələb olunur'
-    if (!form.address.trim()) e.address = 'Ünvan tələb olunur'
     if (!form.category) e.category = 'Kateqoriya seçin'
     return e
   }
@@ -93,7 +92,7 @@ export default function NewReport() {
     try {
       await reportsApi.create({ ...form, assigned_agency: assignedAgency })
       toast.success('Müraciət göndərildi')
-      navigate('/citizen/reports')
+      navigate('/citizen')
     } catch (err: unknown) {
       toast.error((err as Error).message)
     } finally {
@@ -104,8 +103,8 @@ export default function NewReport() {
   return (
     <div className="p-6 max-w-2xl mx-auto">
       <Breadcrumb crumbs={[
-        { label: 'Ana səhifə', to: '/citizen/dashboard' },
-        { label: 'Müraciətlərim', to: '/citizen/reports' },
+        { label: 'Ana səhifə', to: '/citizen' },
+        { label: 'Müraciətlərim', to: '/citizen' },
         { label: 'Yeni müraciət' },
       ]} />
       <h1 className="font-heading text-2xl font-bold text-primary mt-4 mb-6">Yeni müraciət</h1>
@@ -205,25 +204,9 @@ export default function NewReport() {
           {errors.description && <p className="text-xs text-danger">{errors.description}</p>}
         </div>
 
-        {/* Address + Neighborhood */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Input
-            label="Ünvan"
-            value={form.address}
-            onChange={e => set('address', e.target.value)}
-            error={errors.address}
-            placeholder="Küçə, bina nömrəsi"
-          />
-          <Input
-            label="Rayon / Məhəllə"
-            value={form.neighborhood}
-            onChange={e => set('neighborhood', e.target.value)}
-            placeholder="Məs. Nəsimi"
-          />
-        </div>
 
         <div className="flex gap-3 justify-end pt-2">
-          <Button type="button" variant="ghost" onClick={() => navigate('/citizen/reports')}>
+          <Button type="button" variant="ghost" onClick={() => navigate('/citizen')}>
             Ləğv et
           </Button>
           <Button type="submit" loading={submitting} disabled={classifying}>

@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom'
 import { useApi } from '../../hooks/useApi'
 import { analyticsApi, reportsApi } from '../../api'
 import { KPISummary, SLABreach, Report } from '../../types'
-import { MOCK_KPI, MOCK_BREACHES, MOCK_REPORTS } from '../../mocks'
 import KPICard from '../../components/KPICard'
 import StatusBadge from '../../components/StatusBadge'
 import Spinner from '../../components/ui/Spinner'
@@ -17,9 +16,9 @@ export default function ExecutiveDashboard() {
   const breaches = useApi<SLABreach[]>(() => analyticsApi.slaBreaches())
   const recent = useApi<Report[]>(() => reportsApi.all({}))
 
-  const kpi = summary.data ?? MOCK_KPI
-  const breachList = toArr<SLABreach>(breaches.data).length > 0 ? toArr<SLABreach>(breaches.data) : MOCK_BREACHES
-  const recentList = toArr<Report>(recent.data).length > 0 ? toArr<Report>(recent.data) : MOCK_REPORTS
+  const kpi = summary.data ?? { total: 0, resolved: 0, open: 0, sla_breaches: 0 }
+  const breachList = toArr<SLABreach>(breaches.data)
+  const recentList = toArr<Report>(recent.data)
 
   return (
     <div className="p-6 max-w-5xl mx-auto">

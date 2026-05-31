@@ -3,7 +3,6 @@ import { Bell, User, LogOut, Building2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import Modal from './ui/Modal'
 import { GovAlert } from '../types'
-import { MOCK_ALERTS } from '../mocks'
 
 interface PortalHeaderProps {
   role: 'citizen' | 'inspector' | 'executive'
@@ -22,7 +21,7 @@ export default function PortalHeader({
   role,
   userName = 'İstifadəçi',
   notifCount = 0,
-  notifications = MOCK_ALERTS,
+  notifications = [],
 }: PortalHeaderProps) {
   const navigate = useNavigate()
   const [profileOpen, setProfileOpen] = useState(false)

@@ -9,7 +9,6 @@ import {
 import { useApi } from '../../hooks/useApi'
 import { tasksApi, proposalsApi } from '../../api'
 import { Proposal, Task, ReportStatus } from '../../types'
-import { MOCK_PROPOSALS, MOCK_TASKS } from '../../mocks'
 import PortalHeader from '../../components/PortalHeader'
 import TaskMap from '../../components/TaskMap'
 import ProposalCard from '../../components/ProposalCard'
@@ -254,10 +253,8 @@ export default function InspectorPage() {
   const [tab, setTab] = useState<Tab>('route')
   const { data, loading, refetch } = useApi<Task[]>(() => tasksApi.mine())
   const proposalsFetch = useApi<Proposal[]>(() => proposalsApi.list())
-  const tasks = toArr<Task>(data).length > 0 ? toArr<Task>(data) : MOCK_TASKS
-  const proposals = toArr<Proposal>(proposalsFetch.data).length > 0
-    ? toArr<Proposal>(proposalsFetch.data)
-    : MOCK_PROPOSALS
+  const tasks = toArr<Task>(data)
+  const proposals = toArr<Proposal>(proposalsFetch.data)
 
   const activeTasks = tasks.filter(t => t.status !== 'resolved')
   const todayTasks = activeTasks.slice(0, 4)

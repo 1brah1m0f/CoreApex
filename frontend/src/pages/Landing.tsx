@@ -3,21 +3,21 @@ import { User, HardHat, Briefcase } from 'lucide-react'
 
 const roles = [
   {
-    path: '/citizen',
+    role: 'citizen',
     icon: User,
     title: 'Vətəndaş',
     desc: 'Müraciət göndər, təkliflər ver, bildirişləri izlə',
     color: 'hover:border-primary',
   },
   {
-    path: '/inspector',
+    role: 'inspector',
     icon: HardHat,
     title: 'İnspektor',
     desc: 'Tapşırıqları icra et, hesabat yüklə, simulyasiya aç',
     color: 'hover:border-accent',
   },
   {
-    path: '/executive',
+    role: 'executive',
     icon: Briefcase,
     title: 'İcraçı',
     desc: 'Analitika izlə, müraciətlərə nəzarət et, bildiriş göndər',
@@ -56,13 +56,13 @@ export default function Landing() {
 
               <div className="mt-5 flex flex-wrap gap-3">
                 <button
-                  onClick={() => navigate('/auth')}
+                  onClick={() => navigate('/auth?role=citizen')}
                   className="rounded-xl bg-primary px-5 py-2.5 text-white text-sm font-semibold shadow-lg shadow-blue-200 hover:bg-blue-700"
                 >
                   Vətəndaş portalına daxil ol
                 </button>
                 <button
-                  onClick={() => navigate('/auth')}
+                  onClick={() => navigate('/auth?role=executive')}
                   className="rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-primary border border-blue-100 hover:bg-blue-50"
                 >
                   İcraçı paneli
@@ -112,10 +112,10 @@ export default function Landing() {
               </div>
 
               <div className="mt-5 flex flex-col gap-3">
-                {roles.map(({ path, icon: Icon, title, desc, color }) => (
+                {roles.map(({ role, icon: Icon, title, desc, color }) => (
                   <button
-                    key={path}
-                    onClick={() => navigate('/auth')}
+                    key={role}
+                    onClick={() => navigate(`/auth?role=${role}`)}
                     className={`rounded-2xl bg-[#F7F8FC] p-4 border border-transparent transition-all
                       hover:bg-white hover:border-blue-100 hover:shadow-md ${color}`}
                   >

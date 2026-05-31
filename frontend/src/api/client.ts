@@ -14,10 +14,13 @@ client.interceptors.request.use(config => {
 client.interceptors.response.use(
   res => res.data,
   err => {
-    if (err.response?.status === 401) {
+    const isAuthRoute = err.config?.url?.includes('/auth/login') || err.config?.url?.includes('/auth/register');
+    if (err.response?.status === 401 && !isAuthRoute) {
       localStorage.removeItem('apexcore_token')
       localStorage.removeItem('apexcore_role')
-      window.location.href = '/'
+      if (window.location.pathname !== '/auth') {
+        window.location.href = '/'
+      }
     }
     const msg =
       err.response?.data?.detail ||

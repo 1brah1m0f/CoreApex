@@ -10,9 +10,6 @@ import {
 import { useApi } from '../hooks/useApi'
 import { reportsApi, proposalsApi, alertsApi } from '../api'
 import { Report, Proposal, GovAlert } from '../types'
-import {
-  MOCK_REPORTS, MOCK_PROPOSALS, MOCK_ALERTS,
-} from '../mocks'
 import PortalHeader from '../components/PortalHeader'
 import LocationPickerMap from '../components/LocationPickerMap'
 import Spinner from '../components/ui/Spinner'
@@ -311,9 +308,9 @@ export default function CitizenPage() {
   const proposalsFetch = useApi<Proposal[]>(() => proposalsApi.list())
   const alertsFetch = useApi<GovAlert[]>(() => alertsApi.list())
 
-  const reports = toArr<Report>(reportsFetch.data).length > 0 ? toArr<Report>(reportsFetch.data) : MOCK_REPORTS
-  const proposals = toArr<Proposal>(proposalsFetch.data).length > 0 ? toArr<Proposal>(proposalsFetch.data) : MOCK_PROPOSALS
-  const alerts = toArr<GovAlert>(alertsFetch.data).length > 0 ? toArr<GovAlert>(alertsFetch.data) : MOCK_ALERTS
+  const reports = toArr<Report>(reportsFetch.data)
+  const proposals = toArr<Proposal>(proposalsFetch.data)
+  const alerts = toArr<GovAlert>(alertsFetch.data)
 
   const kpi = {
     pending: reports.filter(r => r.status === 'pending').length,
