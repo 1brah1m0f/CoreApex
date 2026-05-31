@@ -21,7 +21,7 @@ export default function Simulation() {
   const [selected, setSelected] = useState<string[]>([])
   const [loadingLayers, setLoadingLayers] = useState(false)
   const [running, setRunning] = useState(false)
-  const [result, setResult] = useState<unknown>(null)
+  const [result, setResult] = useState<any>(null)
 
   async function fetchLayers() {
     setLoadingLayers(true)

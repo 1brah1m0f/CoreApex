@@ -13,6 +13,11 @@ class CitizenLoginRequest(BaseModel):
     password: str
     provider: Optional[str] = "email"
 
+class RegisterRequest(BaseModel):
+    name: str
+    email: str
+    password: str
+
 class TokenResponse(BaseModel):
     access_token: str
     role: str

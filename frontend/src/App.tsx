@@ -6,8 +6,9 @@ import AuthPage from './pages/AuthPage'
 import CitizenPage from './pages/CitizenPage'
 import InspectorPage from './pages/inspector/InspectorPage'
 import ExecutivePage from './pages/executive/ExecutivePage'
+import Chatbot from './components/Chatbot'
 
-const MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
+const MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''
 
 const router = createBrowserRouter([
   { path: '/', element: <Landing /> },
@@ -23,6 +24,7 @@ export default function App() {
     <APIProvider apiKey={MAPS_API_KEY}>
       <RouterProvider router={router} />
       <Toaster position="top-right" richColors />
+      <Chatbot />
     </APIProvider>
   )
 }

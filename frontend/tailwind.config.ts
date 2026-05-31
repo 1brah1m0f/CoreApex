@@ -14,6 +14,7 @@ const config: Config = {
         success:  '#16A34A',
         warning:  '#D97706',
         danger:   '#DC2626',
+        executive:'#7C3AED',
         border:   '#E2E8F0',
       },
       fontFamily: {

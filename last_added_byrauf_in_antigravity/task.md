@@ -1,0 +1,8 @@
+- `[x]` Create task.md for tracking
+- `[x]` Add `.a11y-talkback-highlight` class to `index.css`
+- `[x]` Update `A11ySettings` interface with `talkBack` in `AccessibilityPanel.tsx`
+- `[x]` Add TalkBack UI button in `AccessibilityPanel.tsx`
+- `[x]` Implement `mouseover` and `mouseout` event listeners in `useEffect` when `talkBack` is true
+- `[x]` Use `window.speechSynthesis` API to read text content of hovered elements
+- `[x]` Verify TalkBack functionality and TypeScript compilation
+- `[/]` Update `walkthrough.md` with TalkBack feature details
