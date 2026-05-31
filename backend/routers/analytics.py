@@ -12,15 +12,19 @@ async def get_summary(supabase: AClient = Depends(get_async_supabase)):
         total = len(res.data) if res.data else 0
         resolved = len([r for r in (res.data or []) if r.get("status") in ["resolved", "closed"]])
         return {
-            "total_reports": total,
-            "resolved_reports": resolved,
+            "total": total,
+            "resolved": resolved,
+            "open": total - resolved,
+            "sla_breaches": 0,
             "avg_resolution_time": "12 saat",
             "citizen_satisfaction": 92
         }
     except Exception:
         return {
-            "total_reports": 0,
-            "resolved_reports": 0,
+            "total": 0,
+            "resolved": 0,
+            "open": 0,
+            "sla_breaches": 0,
             "avg_resolution_time": "0 saat",
             "citizen_satisfaction": 0
         }

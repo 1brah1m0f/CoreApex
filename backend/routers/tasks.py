@@ -22,19 +22,47 @@ async def get_current_user_id(authorization: Optional[str] = Header(None), supab
 @router.get("/mine")
 async def get_my_tasks(supabase: AClient = Depends(get_async_supabase), user_id: str = Depends(get_current_user_id)):
     try:
-        res = await supabase.table("tasks").select("*").eq("inspector_id", user_id).execute()
-        return res.data
-    except Exception:
+        # User istəyir ki, bütün vətəndaş müraciətləri avtomatik olaraq Müfəttişin "Tapşırıqlar" panelinə düşsün.
+        # Buna görə də "tasks" cədvəli əvəzinə birbaşa "reports" cədvəlini çəkib task kimi formatlayırıq.
+        res = await supabase.table("reports").select("*").order("created_at", desc=True).execute()
+        reports = res.data or []
+
+        tasks_list = []
+        for rep in reports:
+            tasks_list.append({
+                "id": rep.get("id"),
+                "status": rep.get("status") if rep.get("status") in ["pending", "inprogress", "resolved", "overdue"] else "pending",
+                "address": rep.get("address") or "Naməlum ünvan",
+                "category": rep.get("category") or "Digər",
+                "priority": "Yüksək",
+                "title": rep.get("title") or "Tapşırıq başlığı yoxdur",
+                "description": rep.get("description") or "",
+                "date": rep.get("created_at")[:10] if rep.get("created_at") else "",
+                "report_id": rep.get("id"),
+                "agency_requirements": []
+            })
+        return tasks_list
+    except Exception as e:
+        print(f"ERROR tasks/mine: {e}")
         return []
 
 @router.get("/{id}")
 async def get_task_detail(id: str, supabase: AClient = Depends(get_async_supabase)):
-    res = await supabase.table("tasks").select("*").eq("id", id).single().execute()
-    return res.data
+    try:
+        res = await supabase.table("reports").select("*").eq("id", id).single().execute()
+        return res.data
+    except Exception:
+        return {}
 
 @router.patch("/{id}/status")
 async def update_task_status(id: str, payload: dict, supabase: AClient = Depends(get_async_supabase)):
-    res = await supabase.table("tasks").update({"status": payload.get("status")}).eq("id", id).execute()
+    # Tasks endpoint-i vasitəsilə göndərilən status dəyişikliyini birbaşa reports cədvəlinə tətbiq edirik
+    await supabase.table("reports").update({"status": payload.get("status")}).eq("id", id).execute()
+    # Ehtiyat üçün əgər köhnə tasks varsa orda da update edirik
+    try:
+        await supabase.table("tasks").update({"status": payload.get("status")}).eq("id", id).execute()
+    except Exception:
+        pass
     return {"id": id, "status": payload.get("status"), "resolved_at": datetime.now().isoformat()}
 
 @router.post("/{id}/proof")

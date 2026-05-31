@@ -160,6 +160,6 @@ async def get_report(report_id: str, supabase: Client = Depends(get_supabase)):
 async def get_reports(supabase: Client = Depends(get_supabase)):
     try:
         response = supabase.table("reports").select("*").order("created_at", desc=True).execute()
-        return {"total": len(response.data), "results": response.data}
+        return response.data or []
     except Exception:
-        return {"total": 0, "results": []}
+        return []
